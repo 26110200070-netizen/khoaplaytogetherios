@@ -16,13 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Theos
+      - name: Setup Theos & iOS SDK
         run: |
-          git clone --recursive https://github.com/theos/theos.git ~/theos
-          # Download iOS 16.5 SDK
-          curl -LO https://github.com/xybp888/iOS-SDKs/releases/download/iOS-SDKs/iPhoneOS16.5.sdk.zip
-          unzip -q iPhoneOS16.5.sdk.zip -d ~/theos/sdks/
-          rm -f iPhoneOS16.5.sdk.zip
+          git clone --depth=1 --recursive https://github.com/theos/theos.git ~/theos
+          curl -LO https://github.com/theos/sdks/archive/refs/heads/master.tar.gz
+          tar -xzf master.tar.gz -C ~/theos/sdks --strip-components=1
+          rm -f master.tar.gz
 
       - name: Build Tweak
         run: |
@@ -46,7 +45,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v2.33.0-${{ github.run_number }}
+          tag_name: v2.33.0-b${{ github.run_number }}
           name: KhoaPlaytogether v2.33.0 (Build ${{ github.run_number }})
           body: |
             ### KhoaPlaytogether iOS Non-Jailbreak Mod Menu

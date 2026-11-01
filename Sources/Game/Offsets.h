@@ -84,6 +84,14 @@ namespace Offsets {
         // DialogResultGetItemList (Gacha result summary grid)
         constexpr uintptr_t DialogResultGetItemList_DialogShow         = 0x2B71458; // public override void DialogShow()
         constexpr uintptr_t DialogResultGetItemList_DialogCloseFromBack = 0x2B715C8; // public override void DialogCloseFromBack()
+
+        // DialogItemRepair (Tự động sửa công cụ)
+        constexpr uintptr_t DialogItemRepair_OnClick_Repair            = 0x3EE53F0; // private void OnClick_Repair()
+        constexpr uintptr_t DialogItemRepair_OnClick_Close             = 0x3EE5530; // private void OnClick_Close()
+
+        // DialogMailBox (Tự động mở/nhận quà thư & đóng)
+        constexpr uintptr_t DialogMailBox_OnClick_ReceiveAll           = 0x3EF95B0; // private void OnClick_ReceiveAll()
+        constexpr uintptr_t DialogMailBox_OnClick_Close                = 0x3EF9104; // public void OnClick_Close()
     }
 
     // --------------------------------------------------------------------------
@@ -133,6 +141,7 @@ namespace Offsets {
     namespace Engine {
         constexpr uintptr_t Camera_get_main          = 0xA1671C8; // public static Camera get_main()
         constexpr uintptr_t Camera_WorldToScreenPoint = 0xA165F00; // public Vector3 WorldToScreenPoint(Vector3)
+        constexpr uintptr_t Camera_WorldToViewportPoint = 0xA165FC0; // public Vector3 WorldToViewportPoint(Vector3)
         constexpr uintptr_t Transform_get_position   = 0xA227EBC; // public Vector3 get_position()
         constexpr uintptr_t Transform_set_position   = 0xA227FD0; // public void set_position(Vector3)
         constexpr uintptr_t Component_get_transform  = 0xA208AD0; // public Transform get_transform()
@@ -156,5 +165,8 @@ namespace Offsets {
         constexpr uintptr_t MapObject_get_DetectTargetPos = 0x3980120; // MapObjectManager.get_DetectTargetPos()
         constexpr uintptr_t Insect_get_DetectTargetPos    = 0x2DFB88C; // InsectController.get_DetectTargetPos()
         constexpr uintptr_t Insect_get_LiveInsectList     = 0x2DFFC44; // InsectSystem.get_LiveInsectList()
+        constexpr uintptr_t Insect_OnEscapeInsect         = 0x2DF5F08; // InsectController.OnEscapeInsect(Vector3)
+        constexpr uintptr_t Insect_SenseCheck             = 0x2DF671C; // InsectController.SenseCheck()
+        constexpr uintptr_t InsectSystem_get_CatchRad     = 0x2DFFC4C; // InsectSystem.get_CatchRad()
     }
 }

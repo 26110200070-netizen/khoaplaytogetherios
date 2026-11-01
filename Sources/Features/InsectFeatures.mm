@@ -6,6 +6,7 @@
 #import "FishingFeatures.h"
 #import "PlayerFeatures.h"
 #import "MapFeatures.h"
+#import "Includes/dobby.h"
 #import <QuartzCore/QuartzCore.h>
 #import <vector>
 #import <cmath>
@@ -19,7 +20,9 @@ namespace InsectFeatures {
         true,  // cycleMapCamping
         true,  // cycleMapResort
         true,  // cycleMapDowntown
-        true   // showInfoPopup
+        true,  // showInfoPopup
+        true,  // insectsNoFear (Bọ không sợ hãi / không bay mất)
+        true   // superCatchRadius (30m catch radius)
     };
 
     static Stats g_stats = { 0, 0, 0, 100 };
@@ -51,6 +54,32 @@ namespace InsectFeatures {
     typedef GameTypes::Vector3 (*Insect_get_DetectTargetPos_t)(void* control);
     static Insect_get_DetectTargetPos_t p_Insect_get_DetectTargetPos = nullptr;
 
+    // Dobby Hooks for No-Fear & Super Catch Rad
+    static void (*orig_OnEscapeInsect)(void* this_ptr, GameTypes::Vector3 targetPos) = nullptr;
+    static void hook_OnEscapeInsect(void* this_ptr, GameTypes::Vector3 targetPos) {
+        if (g_config.insectsNoFear) {
+            return; // Suppress escape, insect never flees
+        }
+        if (orig_OnEscapeInsect) orig_OnEscapeInsect(this_ptr, targetPos);
+    }
+
+    static void (*orig_SenseCheck)(void* this_ptr) = nullptr;
+    static void hook_SenseCheck(void* this_ptr) {
+        if (g_config.insectsNoFear) {
+            *(int32_t*)((uintptr_t)this_ptr + 0x238) = 0; // _senseState = None
+            return;
+        }
+        if (orig_SenseCheck) orig_SenseCheck(this_ptr);
+    }
+
+    static float (*orig_get_CatchRad)(void* this_ptr) = nullptr;
+    static float hook_get_CatchRad(void* this_ptr) {
+        if (g_config.superCatchRadius) {
+            return 30.0f; // 30m catch radius
+        }
+        return orig_get_CatchRad ? orig_get_CatchRad(this_ptr) : 1.5f;
+    }
+
     void EnsureHooksInstalled() {
         static bool s_installed = false;
         if (s_installed) return;
@@ -61,7 +90,16 @@ namespace InsectFeatures {
         p_get_LiveInsectList = (get_LiveInsectList_t)Memory::GetRealOffset(Offsets::Collect::Insect_get_LiveInsectList);
         p_Insect_get_DetectTargetPos = (Insect_get_DetectTargetPos_t)Memory::GetRealOffset(Offsets::Collect::Insect_get_DetectTargetPos);
 
-        LOG_INFO("InsectFeatures initialized.");
+        uintptr_t escapeAddr = Memory::GetRealOffset(Offsets::Collect::Insect_OnEscapeInsect);
+        if (escapeAddr) DobbyHook((void*)escapeAddr, (dobby_dummy_func_t)hook_OnEscapeInsect, (dobby_dummy_func_t*)&orig_OnEscapeInsect);
+
+        uintptr_t senseAddr = Memory::GetRealOffset(Offsets::Collect::Insect_SenseCheck);
+        if (senseAddr) DobbyHook((void*)senseAddr, (dobby_dummy_func_t)hook_SenseCheck, (dobby_dummy_func_t*)&orig_SenseCheck);
+
+        uintptr_t radAddr = Memory::GetRealOffset(Offsets::Collect::InsectSystem_get_CatchRad);
+        if (radAddr) DobbyHook((void*)radAddr, (dobby_dummy_func_t)hook_get_CatchRad, (dobby_dummy_func_t*)&orig_get_CatchRad);
+
+        LOG_INFO("InsectFeatures initialized with No-Fear & Super Catch Rad hooks.");
     }
 
     void Initialize() {
@@ -149,8 +187,26 @@ namespace InsectFeatures {
                     if (s_currentTargetControl && p_Insect_get_DetectTargetPos) {
                         GameTypes::Vector3 ipos = p_Insect_get_DetectTargetPos(s_currentTargetControl);
                         if (fabsf(ipos.x) > 0.01f || fabsf(ipos.z) > 0.01f) {
-                            // Teleport trực tiếp tới vị trí bọ
-                            PlayerFeatures::Teleport(ipos.x, ipos.y + 0.1f, ipos.z);
+                            // Tính toán tọa độ mặt đất chuẩn (không lơ lửng trên không)
+                            GameTypes::Vector3 hitPoint = *(GameTypes::Vector3*)((uintptr_t)s_currentTargetControl + 0x1A0);
+                            GameTypes::Vector3 defPos = *(GameTypes::Vector3*)((uintptr_t)s_currentTargetControl + 0x228);
+                            GameTypes::Vector3 playerPos = PlayerFeatures::GetLocalPosition();
+
+                            float groundY = ipos.y;
+                            if (hitPoint.y > -50.0f && hitPoint.y <= ipos.y) {
+                                groundY = hitPoint.y;
+                            } else if (defPos.y > -50.0f && defPos.y <= ipos.y) {
+                                groundY = defPos.y;
+                            } else if (playerPos.y > -50.0f && playerPos.y <= ipos.y + 0.5f) {
+                                groundY = playerPos.y;
+                            }
+
+                            // Teleport nhân vật đứng vững chắc trên mặt đất sát con bọ
+                            PlayerFeatures::Teleport(ipos.x + 0.35f, groundY + 0.05f, ipos.z + 0.35f);
+
+                            // Đồng bộ vị trí vung vợt trong InsectSystem tới thẳng con bọ
+                            *(GameTypes::Vector3*)((uintptr_t)insectSys + 0x9C) = ipos;
+
                             // Nhấn giữ vợt chuẩn bị bắt
                             if (p_OnPressInsectNet) {
                                 p_OnPressInsectNet(player, true);

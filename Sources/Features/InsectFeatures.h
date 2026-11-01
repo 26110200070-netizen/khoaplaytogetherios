@@ -11,6 +11,8 @@ namespace InsectFeatures {
         bool cycleMapResort;           // Map Khu Nghỉ Dưỡng (1301)
         bool cycleMapDowntown;         // Map Downtown (1502)
         bool showInfoPopup;            // Hiển thị popup thông tin bọ & balo
+        bool insectsNoFear;            // Côn trùng không sợ hãi / không bay mất
+        bool superCatchRadius;         // Tăng bán kính bắt của vợt (30m)
     };
 
     struct Stats {

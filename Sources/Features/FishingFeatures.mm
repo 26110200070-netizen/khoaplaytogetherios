@@ -2,7 +2,10 @@
 #import "Game/Offsets.h"
 #import "Utils/Memory.h"
 #import "Utils/Logging.h"
+#import "Includes/IMGUI/imgui.h"
+#import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
+#import <sstream>
 
 namespace FishingFeatures {
 
@@ -16,7 +19,9 @@ namespace FishingFeatures {
         0.08f,  // stunTapInterval (80ms)
         true,   // keepFishShadow67
         false,  // fastCatch
-        { true, true, true, true, true, true, true, true } // All 7 shadows allowed by default
+        { true, true, true, true, true, true, true, true }, // All 7 shadows allowed by default
+        false,  // enableIdFilter
+        { false } // filterFishIds
     };
 
     static Status g_status = {
@@ -261,7 +266,13 @@ namespace FishingFeatures {
     }
 
     void Initialize() {
-        LOG_INFO("Fishing Subsystem Initialized with SystemHelper dynamic runtime binding.");
+        for (size_t i = 0; i < k_fishTableCount; i++) {
+            uint32_t fid = k_fishTable[i].id;
+            if (fid < 25000) {
+                g_config.filterFishIds[fid] = true;
+            }
+        }
+        LOG_INFO("Fishing Subsystem Initialized with SystemHelper dynamic runtime binding and FishTable.");
     }
 
     Config& GetConfig() { return g_config; }
@@ -283,6 +294,55 @@ namespace FishingFeatures {
         void* player = GetLocalPlayerControl();
         if (player && p_OnClickFishing) {
             p_OnClickFishing(player);
+        }
+    }
+
+    std::string GetSelectedFishIdsString() {
+        std::string res;
+        for (size_t i = 0; i < k_fishTableCount; i++) {
+            uint32_t fid = k_fishTable[i].id;
+            if (fid < 25000 && g_config.filterFishIds[fid]) {
+                if (!res.empty()) res += ", ";
+                res += std::to_string(fid);
+            }
+        }
+        return res;
+    }
+
+    void CopySelectedFishIdsToClipboard() {
+        std::string idsStr = GetSelectedFishIdsString();
+        if (idsStr.empty()) return;
+        NSString* nsStr = [NSString stringWithUTF8String:idsStr.c_str()];
+        [UIPasteboard generalPasteboard].string = nsStr;
+        ImGui::SetClipboardText(idsStr.c_str());
+        LOG_INFO("Copied selected fish IDs to clipboard: " + idsStr);
+    }
+
+    void CopySingleFishIdToClipboard(uint32_t id) {
+        std::string s = std::to_string(id);
+        NSString* nsStr = [NSString stringWithUTF8String:s.c_str()];
+        [UIPasteboard generalPasteboard].string = nsStr;
+        ImGui::SetClipboardText(s.c_str());
+        LOG_INFO("Copied fish ID to clipboard: " + s);
+    }
+
+    void SelectAllFishIds(bool select) {
+        for (size_t i = 0; i < k_fishTableCount; i++) {
+            uint32_t fid = k_fishTable[i].id;
+            if (fid < 25000) {
+                g_config.filterFishIds[fid] = select;
+            }
+        }
+    }
+
+    void SelectShadowFishIds(int shadow, bool select) {
+        for (size_t i = 0; i < k_fishTableCount; i++) {
+            if (k_fishTable[i].shadow == shadow) {
+                uint32_t fid = k_fishTable[i].id;
+                if (fid < 25000) {
+                    g_config.filterFishIds[fid] = select;
+                }
+            }
         }
     }
 }

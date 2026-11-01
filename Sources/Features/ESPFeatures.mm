@@ -46,6 +46,9 @@ namespace ESPFeatures {
     typedef GameTypes::Vector3 (*Camera_WorldToScreenPoint_t)(void* camera, GameTypes::Vector3 pos);
     static Camera_WorldToScreenPoint_t p_Camera_WorldToScreenPoint = nullptr;
 
+    typedef GameTypes::Vector3 (*Camera_WorldToViewportPoint_t)(void* camera, GameTypes::Vector3 pos);
+    static Camera_WorldToViewportPoint_t p_Camera_WorldToViewportPoint = nullptr;
+
     typedef GameTypes::Vector3 (*Transform_get_position_t)(void* transform);
     static Transform_get_position_t p_Transform_get_position = nullptr;
 
@@ -78,6 +81,7 @@ namespace ESPFeatures {
 
         p_Camera_get_main = (Camera_get_main_t)Memory::GetRealOffset(Offsets::Engine::Camera_get_main);
         p_Camera_WorldToScreenPoint = (Camera_WorldToScreenPoint_t)Memory::GetRealOffset(Offsets::Engine::Camera_WorldToScreenPoint);
+        p_Camera_WorldToViewportPoint = (Camera_WorldToViewportPoint_t)Memory::GetRealOffset(Offsets::Engine::Camera_WorldToViewportPoint);
         p_Transform_get_position = (Transform_get_position_t)Memory::GetRealOffset(Offsets::Engine::Transform_get_position);
         p_Component_get_transform = (Component_get_transform_t)Memory::GetRealOffset(Offsets::Engine::Component_get_transform);
 
@@ -115,7 +119,7 @@ namespace ESPFeatures {
         }
 
         double now = CACurrentMediaTime();
-        if (now - s_lastScanTime < 0.15) return; // Refresh scan at ~6.6 Hz
+        if (now - s_lastScanTime < 0.016) return; // Refresh scan at ~60 FPS (zero latency)
         s_lastScanTime = now;
 
         @try {
@@ -234,25 +238,22 @@ namespace ESPFeatures {
     }
 
     // --------------------------------------------------------------------------
-    // 3D-to-2D Viewport Transformation
+    // 3D-to-2D Viewport Transformation (Chuẩn Cate WorldToViewportPoint)
     // --------------------------------------------------------------------------
     static bool WorldToScreen(const GameTypes::Vector3& worldPos, ImVec2& screenPos) {
         if (!p_Camera_get_main) p_Camera_get_main = (Camera_get_main_t)Memory::GetRealOffset(Offsets::Engine::Camera_get_main);
-        if (!p_Camera_WorldToScreenPoint) p_Camera_WorldToScreenPoint = (Camera_WorldToScreenPoint_t)Memory::GetRealOffset(Offsets::Engine::Camera_WorldToScreenPoint);
+        if (!p_Camera_WorldToViewportPoint) p_Camera_WorldToViewportPoint = (Camera_WorldToViewportPoint_t)Memory::GetRealOffset(Offsets::Engine::Camera_WorldToViewportPoint);
 
-        if (!p_Camera_get_main || !p_Camera_WorldToScreenPoint) return false;
+        if (!p_Camera_get_main || !p_Camera_WorldToViewportPoint) return false;
         void* mainCam = p_Camera_get_main();
         if (!mainCam) return false;
 
-        GameTypes::Vector3 scr = p_Camera_WorldToScreenPoint(mainCam, worldPos);
-        if (scr.z <= 0.05f) return false; // Target behind camera
+        GameTypes::Vector3 vp = p_Camera_WorldToViewportPoint(mainCam, worldPos);
+        if (vp.z <= 0.05f) return false; // Target behind camera
 
         ImGuiIO& io = ImGui::GetIO();
-        float scaleX = io.DisplayFramebufferScale.x > 0.0f ? io.DisplayFramebufferScale.x : 1.0f;
-        float scaleY = io.DisplayFramebufferScale.y > 0.0f ? io.DisplayFramebufferScale.y : 1.0f;
-
-        screenPos.x = scr.x / scaleX;
-        screenPos.y = io.DisplaySize.y - (scr.y / scaleY); // Invert Unity Y to ImGui coordinate space with scale correction
+        screenPos.x = vp.x * io.DisplaySize.x;
+        screenPos.y = (1.0f - vp.y) * io.DisplaySize.y; // Viewport Y 0=bottom -> ImGui Y 0=top
         return true;
     }
 

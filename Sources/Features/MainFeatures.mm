@@ -15,10 +15,12 @@ namespace MainFeatures {
         true,  // autoCloseCardBox
         0.30f, // autoCloseDelay
         true,  // autoClickOK
-        false  // teleGuideArrow
+        false, // teleGuideArrow
+        true,  // autoRepairTools (Tự động sửa công cụ khi hỏng)
+        false  // autoOpenMailGift (Tự động mở quà thư & đóng)
     };
 
-    static Stats g_stats = { 0, 0, 0 };
+    static Stats g_stats = { 0, 0, 0, 0, 0 };
 
     typedef void* (*SystemHelper_get_Dialog_t)();
     static SystemHelper_get_Dialog_t p_get_Dialog = nullptr;
@@ -38,6 +40,15 @@ namespace MainFeatures {
     typedef void (*DialogResultGetItemView_CloseFromBack_t)(void* this_ptr);
     static DialogResultGetItemView_CloseFromBack_t p_DialogResultGetItemView_CloseFromBack = nullptr;
 
+    typedef void (*DialogItemRepair_OnClick_Repair_t)(void* this_ptr);
+    static DialogItemRepair_OnClick_Repair_t p_DialogItemRepair_OnClick_Repair = nullptr;
+
+    typedef void (*DialogMailBox_OnClick_ReceiveAll_t)(void* this_ptr);
+    static DialogMailBox_OnClick_ReceiveAll_t p_DialogMailBox_OnClick_ReceiveAll = nullptr;
+
+    typedef void (*DialogMailBox_OnClick_Close_t)(void* this_ptr);
+    static DialogMailBox_OnClick_Close_t p_DialogMailBox_OnClick_Close = nullptr;
+
     typedef GameTypes::Vector3 (*Transform_get_position_t)(void* transform);
     static Transform_get_position_t p_Transform_get_position = nullptr;
 
@@ -45,6 +56,8 @@ namespace MainFeatures {
     static double s_lastGiftCloseTime = 0.0;
     static double s_lastCardCloseTime = 0.0;
     static double s_lastTeleGuideTime = 0.0;
+    static double s_lastRepairTime = 0.0;
+    static double s_lastMailReceiveTime = 0.0;
 
     void EnsureHooksInstalled() {
         static bool s_installed = false;
@@ -58,9 +71,12 @@ namespace MainFeatures {
         p_DialogFishingGetItem_OnClick_Close = (DialogFishingGetItem_OnClick_Close_t)Memory::GetRealOffset(Offsets::Dialogs::DialogFishingGetItem_OnClick_Close);
         p_DialogRewardPopup_OnClickYes = (DialogRewardPopup_OnClickYes_t)Memory::GetRealOffset(Offsets::Dialogs::DialogRewardPopup_OnClickYes);
         p_DialogResultGetItemView_CloseFromBack = (DialogResultGetItemView_CloseFromBack_t)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemView_DialogCloseFromBack);
+        p_DialogItemRepair_OnClick_Repair = (DialogItemRepair_OnClick_Repair_t)Memory::GetRealOffset(Offsets::Dialogs::DialogItemRepair_OnClick_Repair);
+        p_DialogMailBox_OnClick_ReceiveAll = (DialogMailBox_OnClick_ReceiveAll_t)Memory::GetRealOffset(Offsets::Dialogs::DialogMailBox_OnClick_ReceiveAll);
+        p_DialogMailBox_OnClick_Close = (DialogMailBox_OnClick_Close_t)Memory::GetRealOffset(Offsets::Dialogs::DialogMailBox_OnClick_Close);
         p_Transform_get_position = (Transform_get_position_t)Memory::GetRealOffset(Offsets::Engine::Transform_get_position);
 
-        LOG_INFO("MainFeatures initialized.");
+        LOG_INFO("MainFeatures initialized with repair and mailbox bindings.");
     }
 
     void Initialize() {
@@ -69,7 +85,49 @@ namespace MainFeatures {
 
     Config& GetConfig() { return g_config; }
     Stats GetStats() { return g_stats; }
-    void ResetStats() { g_stats = { 0, 0, 0 }; }
+    void ResetStats() { g_stats = { 0, 0, 0, 0, 0 }; }
+
+    void TriggerRepairNow() {
+        @try {
+            if (!p_get_Dialog) p_get_Dialog = (SystemHelper_get_Dialog_t)Memory::GetRealOffset(Offsets::SystemHelper::get_Dialog);
+            if (!p_FindTypeFirst) p_FindTypeFirst = (DialogSystem_FindTypeFirst_t)Memory::GetRealOffset(Offsets::SystemHelper::DialogSystem_FindTypeFirst);
+            if (!p_DialogItemRepair_OnClick_Repair) p_DialogItemRepair_OnClick_Repair = (DialogItemRepair_OnClick_Repair_t)Memory::GetRealOffset(Offsets::Dialogs::DialogItemRepair_OnClick_Repair);
+
+            if (p_get_Dialog && p_FindTypeFirst && p_DialogItemRepair_OnClick_Repair) {
+                void* dialogSys = p_get_Dialog();
+                if (dialogSys) {
+                    void* repairDialog = p_FindTypeFirst(dialogSys, 18);
+                    if (repairDialog) {
+                        p_DialogItemRepair_OnClick_Repair(repairDialog);
+                        g_stats.toolsRepairedCount++;
+                    }
+                }
+            }
+        } @catch (NSException *ex) {}
+    }
+
+    void TriggerReceiveAllMailNow() {
+        @try {
+            if (!p_get_Dialog) p_get_Dialog = (SystemHelper_get_Dialog_t)Memory::GetRealOffset(Offsets::SystemHelper::get_Dialog);
+            if (!p_FindTypeFirst) p_FindTypeFirst = (DialogSystem_FindTypeFirst_t)Memory::GetRealOffset(Offsets::SystemHelper::DialogSystem_FindTypeFirst);
+            if (!p_DialogMailBox_OnClick_ReceiveAll) p_DialogMailBox_OnClick_ReceiveAll = (DialogMailBox_OnClick_ReceiveAll_t)Memory::GetRealOffset(Offsets::Dialogs::DialogMailBox_OnClick_ReceiveAll);
+            if (!p_DialogMailBox_OnClick_Close) p_DialogMailBox_OnClick_Close = (DialogMailBox_OnClick_Close_t)Memory::GetRealOffset(Offsets::Dialogs::DialogMailBox_OnClick_Close);
+
+            if (p_get_Dialog && p_FindTypeFirst && p_DialogMailBox_OnClick_ReceiveAll) {
+                void* dialogSys = p_get_Dialog();
+                if (dialogSys) {
+                    void* mailDialog = p_FindTypeFirst(dialogSys, 115);
+                    if (mailDialog) {
+                        p_DialogMailBox_OnClick_ReceiveAll(mailDialog);
+                        g_stats.mailGiftsReceivedCount++;
+                        if (p_DialogMailBox_OnClick_Close) {
+                            p_DialogMailBox_OnClick_Close(mailDialog);
+                        }
+                    }
+                }
+            }
+        } @catch (NSException *ex) {}
+    }
 
     void TriggerTeleGuide() {
         @try {
@@ -99,6 +157,9 @@ namespace MainFeatures {
             if (!p_DialogFishingGetItem_OnClick_Close) p_DialogFishingGetItem_OnClick_Close = (DialogFishingGetItem_OnClick_Close_t)Memory::GetRealOffset(Offsets::Dialogs::DialogFishingGetItem_OnClick_Close);
             if (!p_DialogRewardPopup_OnClickYes) p_DialogRewardPopup_OnClickYes = (DialogRewardPopup_OnClickYes_t)Memory::GetRealOffset(Offsets::Dialogs::DialogRewardPopup_OnClickYes);
             if (!p_DialogResultGetItemView_CloseFromBack) p_DialogResultGetItemView_CloseFromBack = (DialogResultGetItemView_CloseFromBack_t)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemView_DialogCloseFromBack);
+            if (!p_DialogItemRepair_OnClick_Repair) p_DialogItemRepair_OnClick_Repair = (DialogItemRepair_OnClick_Repair_t)Memory::GetRealOffset(Offsets::Dialogs::DialogItemRepair_OnClick_Repair);
+            if (!p_DialogMailBox_OnClick_ReceiveAll) p_DialogMailBox_OnClick_ReceiveAll = (DialogMailBox_OnClick_ReceiveAll_t)Memory::GetRealOffset(Offsets::Dialogs::DialogMailBox_OnClick_ReceiveAll);
+            if (!p_DialogMailBox_OnClick_Close) p_DialogMailBox_OnClick_Close = (DialogMailBox_OnClick_Close_t)Memory::GetRealOffset(Offsets::Dialogs::DialogMailBox_OnClick_Close);
 
             double now = CACurrentMediaTime();
 
@@ -144,6 +205,33 @@ namespace MainFeatures {
                         s_lastCardCloseTime = now;
                         p_DialogResultGetItemView_CloseFromBack(cardDialog);
                         g_stats.cardBoxesClosedCount++;
+                    }
+                }
+            }
+
+            // 5. Tự Động Sửa Công Cụ (ItemRepair = 18)
+            if (g_config.autoRepairTools && p_DialogItemRepair_OnClick_Repair) {
+                void* repairDialog = p_FindTypeFirst(dialogSys, 18);
+                if (repairDialog && (uintptr_t)repairDialog >= 0x100000000ULL) {
+                    if (now - s_lastRepairTime >= 0.5) {
+                        s_lastRepairTime = now;
+                        p_DialogItemRepair_OnClick_Repair(repairDialog);
+                        g_stats.toolsRepairedCount++;
+                    }
+                }
+            }
+
+            // 6. Tự Động Mở & Nhận Quà Thư (MailBox = 115)
+            if (g_config.autoOpenMailGift && p_DialogMailBox_OnClick_ReceiveAll) {
+                void* mailDialog = p_FindTypeFirst(dialogSys, 115);
+                if (mailDialog && (uintptr_t)mailDialog >= 0x100000000ULL) {
+                    if (now - s_lastMailReceiveTime >= 0.8) {
+                        s_lastMailReceiveTime = now;
+                        p_DialogMailBox_OnClick_ReceiveAll(mailDialog);
+                        g_stats.mailGiftsReceivedCount++;
+                        if (p_DialogMailBox_OnClick_Close) {
+                            p_DialogMailBox_OnClick_Close(mailDialog);
+                        }
                     }
                 }
             }

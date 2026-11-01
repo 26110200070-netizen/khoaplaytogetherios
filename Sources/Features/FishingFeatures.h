@@ -1,7 +1,9 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <vector>
 #include "Game/GameTypes.h"
+#include "FishTable.h"
 
 namespace FishingFeatures {
 
@@ -20,6 +22,10 @@ namespace FishingFeatures {
         bool keepFishShadow67;         // Không bán cá bóng 6, 7
         bool fastCatch;                // Cá cắn nhanh
         bool filterShadow[8];          // Lọc bóng 1 -> 7 (true = giữ/câu, false = bỏ qua)
+
+        // Lọc theo ID loài cá
+        bool enableIdFilter;           // Bật lọc chi tiết theo ID loài cá
+        bool filterFishIds[25000];     // Trạng thái bật/tắt từng ID cá
     };
 
     struct Status {
@@ -44,4 +50,11 @@ namespace FishingFeatures {
 
     void TriggerCast();
     void TriggerReel();
+
+    // Clipboard & Selection Helpers
+    void SelectAllFishIds(bool select);
+    void SelectShadowFishIds(int shadow, bool select);
+    std::string GetSelectedFishIdsString();
+    void CopySelectedFishIdsToClipboard();
+    void CopySingleFishIdToClipboard(uint32_t id);
 }

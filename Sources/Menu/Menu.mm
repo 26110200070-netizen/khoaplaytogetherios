@@ -49,29 +49,47 @@ namespace Menu {
     void ToggleOpen() { s_isOpen = !s_isOpen; }
 
     // --------------------------------------------------------------------------
-    // TAB 1: MAIN (HỆ THỐNG, BẢO QUẢN & TELE HƯỚNG DẪN)
+    // TAB 1: MAIN (HỆ THỐNG, SỬA CÔNG CỤ, MỞ QUÀ & TELE HƯỚNG DẪN)
     // --------------------------------------------------------------------------
     static void RenderTabMain() {
         auto& mcfg = MainFeatures::GetConfig();
         auto mstats = MainFeatures::GetStats();
 
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "CHỨC NĂNG HỆ THỐNG");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "TRANG CHỦ - HỆ THỐNG & TỰ ĐỘNG");
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Tự Động Bảo Quản & Bấm OK:");
-        ImGui::Checkbox("Bật Auto Bảo Quản", &mcfg.autoPreserveFish);
-        ImGui::Checkbox("Tự Động Bấm OK Khi Nhận", &mcfg.autoClickOK);
+        ImGui::Checkbox("Bật Auto Bảo Quản Cá", &mcfg.autoPreserveFish);
+        ImGui::Checkbox("Tự Động Bấm OK Khi Nhận Thưởng", &mcfg.autoClickOK);
         ImGui::SliderFloat("Delay Bảo Quản (s)", &mcfg.autoPreserveDelay, 0.1f, 1.0f, "%.2f s");
         ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã bảo quản: %u con", mstats.fishPreservedCount);
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Tự Động Đóng Giao Diện:");
-        ImGui::Checkbox("Tự Động Đóng Hộp Quà", &mcfg.autoCloseGift);
-        ImGui::Checkbox("Tự Động Đóng Hộp Thẻ", &mcfg.autoCloseCardBox);
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Sửa Công Cụ (Auto Repair Tool):");
+        ImGui::Checkbox("Tự Động Sửa Công Cụ (Cần câu, cuốc đá, vợt bọ)", &mcfg.autoRepairTools);
+        if (ImGui::Button("Sửa Công Cụ Ngay", ImVec2(180, 26))) {
+            MainFeatures::TriggerRepairNow();
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã sửa: %u lần", mstats.toolsRepairedCount);
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[3] Quà Thư & Hộp Quà:");
+        ImGui::Checkbox("Tự Động Nhận Quà Thư & Tự Đóng (MailBox)", &mcfg.autoOpenMailGift);
+        if (ImGui::Button("Nhận Hết Quà Thư Ngay", ImVec2(180, 26))) {
+            MainFeatures::TriggerReceiveAllMailNow();
+        }
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã nhận: %u lần", mstats.mailGiftsReceivedCount);
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[4] Tự Động Đóng Giao Diện:");
+        ImGui::Checkbox("Tự Động Đóng Hộp Quà (DialogRewardPopup)", &mcfg.autoCloseGift);
+        ImGui::Checkbox("Tự Động Đóng Hộp Thẻ (DialogResultGetItemView)", &mcfg.autoCloseCardBox);
         ImGui::SliderFloat("Delay Đóng (s)", &mcfg.autoCloseDelay, 0.1f, 1.0f, "%.2f s");
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[3] Tele Hướng Dẫn:");
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[5] Tele Hướng Dẫn:");
         ImGui::Checkbox("Auto Tele Hướng Dẫn (Mũi Tên Chỉ Đường)", &mcfg.teleGuideArrow);
         if (ImGui::Button("Tele Ngay Tới Hướng Dẫn", ImVec2(200, 26))) {
             MainFeatures::TriggerTeleGuide();
@@ -79,13 +97,13 @@ namespace Menu {
     }
 
     // --------------------------------------------------------------------------
-    // TAB 2: CÂU CÁ (FISHING)
+    // TAB 2: CÂU CÁ (FISHING) - TÍCH HỢP LỌC BÓNG & LỌC ID
     // --------------------------------------------------------------------------
     static void RenderTabFishing() {
         auto& fcfg = FishingFeatures::GetConfig();
         auto fstatus = FishingFeatures::GetStatus();
 
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "TỰ ĐỘNG CÂU CÁ");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "TỰ ĐỘNG CÂU CÁ & LỌC CÁ");
         ImGui::Separator();
 
         ImGui::Checkbox("Bật Auto Câu Cá", &fcfg.autoFishingEnabled);
@@ -111,7 +129,7 @@ namespace Menu {
         }
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "Lọc Bóng Cá:");
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Lọc Nhanh Theo Bóng Cá:");
         ImGui::Checkbox("Bóng 1", &fcfg.filterShadow[1]); ImGui::SameLine();
         ImGui::Checkbox("Bóng 2", &fcfg.filterShadow[2]); ImGui::SameLine();
         ImGui::Checkbox("Bóng 3", &fcfg.filterShadow[3]);
@@ -119,6 +137,62 @@ namespace Menu {
         ImGui::Checkbox("Bóng 5", &fcfg.filterShadow[5]); ImGui::SameLine();
         ImGui::Checkbox("Bóng 6", &fcfg.filterShadow[6]);
         ImGui::Checkbox("Bóng 7", &fcfg.filterShadow[7]);
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Lọc Chi Tiết Theo ID Loài Cá:");
+        ImGui::Checkbox("Bật Lọc Chi Tiết Theo ID", &fcfg.enableIdFilter);
+
+        if (ImGui::Button("Sao Chép ID Đã Lọc", ImVec2(150, 26))) {
+            FishingFeatures::CopySelectedFishIdsToClipboard();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Chọn Tất Cả", ImVec2(90, 26))) {
+            FishingFeatures::SelectAllFishIds(true);
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Bỏ Chọn Hết", ImVec2(90, 26))) {
+            FishingFeatures::SelectAllFishIds(false);
+        }
+
+        ImGui::TextColored(ImVec4(0.6f, 0.8f, 1.0f, 1.0f), "Mẹo: Click trực tiếp vào cột ID để copy nhanh từng mã.");
+
+        // Bảng lọc ID cá cuộn mượt
+        if (ImGui::BeginChild("##FishIdTableArea", ImVec2(0, 180), true)) {
+            if (ImGui::BeginTable("##FishFilterTable", 3, ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuter | ImGuiTableFlags_ScrollY)) {
+                ImGui::TableSetupColumn("Chọn", ImGuiTableColumnFlags_WidthFixed, 40.0f);
+                ImGui::TableSetupColumn("ID Cá", ImGuiTableColumnFlags_WidthFixed, 60.0f);
+                ImGui::TableSetupColumn("Bóng & Loài Cá", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableHeadersRow();
+
+                for (size_t i = 0; i < FishingFeatures::k_fishTableCount; i++) {
+                    const auto& entry = FishingFeatures::k_fishTable[i];
+                    uint32_t fid = entry.id;
+                    if (fid >= 25000) continue;
+
+                    ImGui::TableNextRow();
+
+                    // Cột 1: Checkbox
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::PushID((int)fid);
+                    ImGui::Checkbox("##chk", &fcfg.filterFishIds[fid]);
+                    ImGui::PopID();
+
+                    // Cột 2: Nút ID bấm để copy
+                    ImGui::TableSetColumnIndex(1);
+                    char idBtnLabel[32];
+                    snprintf(idBtnLabel, sizeof(idBtnLabel), "%u##id", fid);
+                    if (ImGui::SmallButton(idBtnLabel)) {
+                        FishingFeatures::CopySingleFishIdToClipboard(fid);
+                    }
+
+                    // Cột 3: Tên bóng & tóm tắt loài cá
+                    ImGui::TableSetColumnIndex(2);
+                    ImGui::Text("B%u - %s", entry.shadow, entry.speciesSummary);
+                }
+                ImGui::EndTable();
+            }
+            ImGui::EndChild();
+        }
     }
 
     // --------------------------------------------------------------------------
@@ -131,7 +205,26 @@ namespace Menu {
         ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "TỰ ĐỘNG BẮT BỌ");
         ImGui::Separator();
 
-        ImGui::Checkbox("Bật Auto Bắt Bọ (Tele -> Đợi 2s -> Vợt)", &icfg.autoCatchInsect);
+        ImGui::Checkbox("Bật Auto Bắt Bọ (Tele Dưới Đất -> Chờ 2s -> Vợt)", &icfg.autoCatchInsect);
+        ImGui::Checkbox("Côn Trùng Không Sợ (Đứng Yên, Không Bay Mất)", &icfg.insectsNoFear);
+        ImGui::Checkbox("Tăng Tầm Vợt Siêu Rộng (30m)", &icfg.superCatchRadius);
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "Tự Động Đổi Map Khi Hết Bọ:");
+        ImGui::Checkbox("Bật Auto Đổi Map Bắt Bọ", &icfg.autoChangeMap);
+        ImGui::TextColored(ImVec4(0.75f, 0.75f, 0.75f, 1.0f), "Chọn các map xoay vòng:");
+        ImGui::Checkbox("Quảng Trường (Plaza)", &icfg.cycleMapPlaza); ImGui::SameLine();
+        ImGui::Checkbox("Khu Cắm Trại", &icfg.cycleMapCamping);
+        ImGui::Checkbox("Khu Nghỉ Dưỡng", &icfg.cycleMapResort); ImGui::SameLine();
+        ImGui::Checkbox("Downtown", &icfg.cycleMapDowntown);
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "Bảng Thông Tin:");
+        ImGui::Checkbox("Hiện Popup Thông Tin Trên Màn Hình", &icfg.showInfoPopup);
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Số bọ trong map: %u con", istats.insectsInMap);
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã bắt được: %u con", istats.insectsCaught);
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Balo hiện tại: %d con", istats.backpackCount);
+    }
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "Tự Động Đổi Map Khi Hết Bọ:");

@@ -33,6 +33,9 @@ namespace PlayerFeatures {
     typedef GameTypes::Vector3 (*Motor_get_TransientPosition_t)(void* motor);
     static Motor_get_TransientPosition_t p_Motor_get_TransientPosition = nullptr;
 
+    typedef void (*Transform_set_position_t)(void* trans, GameTypes::Vector3 pos);
+    static Transform_set_position_t p_Transform_set_position = nullptr;
+
     void EnsureHooksInstalled() {
         static bool s_installed = false;
         if (s_installed) return;
@@ -43,6 +46,7 @@ namespace PlayerFeatures {
         p_Motor_SetMovementCollisionsSolvingActivation = (Motor_SetMovementCollisionsSolvingActivation_t)Memory::GetRealOffset(Offsets::Kinematic::Motor_SetMovementCollisionsSolvingActivation);
         p_Motor_set_CheatDetect = (Motor_set_CheatDetect_t)Memory::GetRealOffset(Offsets::Kinematic::Motor_set_CheatDetect);
         p_Motor_get_TransientPosition = (Motor_get_TransientPosition_t)Memory::GetRealOffset(Offsets::Kinematic::Motor_get_TransientPosition);
+        p_Transform_set_position = (Transform_set_position_t)Memory::GetRealOffset(Offsets::Engine::Transform_set_position);
 
         LOG_INFO("PlayerFeatures runtime motor pointers initialized.");
     }
@@ -154,12 +158,27 @@ namespace PlayerFeatures {
             void* motor = GetMotor();
             if (!motor) return;
 
+            GameTypes::Vector3 target = { x, y, z };
+
+            // 1. Cập nhật trực tiếp vào bộ đệm vị trí nội bộ của Kinematic Motor
+            *(GameTypes::Vector3*)((uintptr_t)motor + 0x100) = target; // _transientPosition
+            *(GameTypes::Vector3*)((uintptr_t)motor + 0x160) = target; // _initialSimulationPosition
+            *(GameTypes::Vector3*)((uintptr_t)motor + 0x210) = target; // _initialTickPosition
+
+            // 2. Cập nhật vị trí Unity Transform gốc
+            void* tr = *(void**)((uintptr_t)motor + 0xF8);
+            if (!p_Transform_set_position) {
+                p_Transform_set_position = (Transform_set_position_t)Memory::GetRealOffset(Offsets::Engine::Transform_set_position);
+            }
+            if (tr && p_Transform_set_position) {
+                p_Transform_set_position(tr, target);
+            }
+
+            // 3. Gọi hàm SetPosition của Kinematic Motor
             if (!p_Motor_SetPosition) {
                 p_Motor_SetPosition = (Motor_SetPosition_t)Memory::GetRealOffset(Offsets::Kinematic::Motor_SetPosition);
             }
-
             if (p_Motor_SetPosition) {
-                GameTypes::Vector3 target = { x, y, z };
                 p_Motor_SetPosition(motor, target, true);
             }
         } @catch (NSException *ex) {

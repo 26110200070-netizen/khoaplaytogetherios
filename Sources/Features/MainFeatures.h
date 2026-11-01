@@ -9,6 +9,8 @@ namespace MainFeatures {
         bool autoCloseGift;        // Đóng quà (DialogRewardPopup)
         bool autoCloseCardBox;     // Đóng hộp thẻ / Gacha box (DialogResultGetItemView)
         float autoCloseDelay;      // Delay đóng quà ~0.3s
+        bool autoClickOK;          // Tự động bấm OK khi nhận thưởng
+        bool teleGuideArrow;       // Tele Hướng Dẫn (MapGuideArrow)
     };
 
     struct Stats {
@@ -23,6 +25,7 @@ namespace MainFeatures {
     Config& GetConfig();
     Stats GetStats();
     void ResetStats();
+    void TriggerTeleGuide();
 
     // Active dialog tracking
     void* GetActiveFishingGetItemDialog();

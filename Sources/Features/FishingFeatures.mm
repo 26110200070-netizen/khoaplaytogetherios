@@ -201,15 +201,20 @@ namespace FishingFeatures {
                     }
                 }
             }
-            // 2. Tự động giải Minigame cá khổng lồ (States 16, 17, 18, 19)
-            else if (currentState == 16 || currentState == 17 || currentState == 18 || currentState == 19) {
+            // 2. Minigame cá khổng lồ: CHỈ GIẬT KHI CÁ CHOÁNG (StunBegin = 23, Stun = 24)!
+            // TUYỆT ĐỐI KHÔNG GIẬT khi cá đang quẫy kéo dây (Drag = 17, Fighting = 19) để tránh đứt dây!
+            else if (currentState == 23 || currentState == 24) {
                 g_status.isInMinigame = true;
-                if (now - s_lastActionTime >= (double)g_config.stunTapInterval) {
+                if (now - s_lastActionTime >= 0.12) {
                     s_lastActionTime = now;
                     if (p_OnClickFishing) {
                         p_OnClickFishing(player);
                     }
                 }
+            }
+            else if (currentState >= 13 && currentState <= 22) {
+                // Cá đang giằng co / kéo dây: Giữ nguyên không giật cần
+                g_status.isInMinigame = true;
             }
             // 3. Bắt được cá thành công (State 7 hoặc 20)
             else if (currentState == 7 || currentState == 20) {

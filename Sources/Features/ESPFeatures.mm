@@ -248,8 +248,11 @@ namespace ESPFeatures {
         if (scr.z <= 0.05f) return false; // Target behind camera
 
         ImGuiIO& io = ImGui::GetIO();
-        screenPos.x = scr.x;
-        screenPos.y = io.DisplaySize.y - scr.y; // Invert Unity Y to ImGui coordinate space
+        float scaleX = io.DisplayFramebufferScale.x > 0.0f ? io.DisplayFramebufferScale.x : 1.0f;
+        float scaleY = io.DisplayFramebufferScale.y > 0.0f ? io.DisplayFramebufferScale.y : 1.0f;
+
+        screenPos.x = scr.x / scaleX;
+        screenPos.y = io.DisplaySize.y - (scr.y / scaleY); // Invert Unity Y to ImGui coordinate space with scale correction
         return true;
     }
 

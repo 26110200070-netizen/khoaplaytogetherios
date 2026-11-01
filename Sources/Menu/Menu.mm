@@ -18,17 +18,20 @@ namespace Menu {
 
     // Boss & Event state flags
     static bool s_bossAttack = false;
-    static bool s_autoAim = false;
-    static bool s_rapidFire = false;
     static bool s_noRecoil = false;
     static float s_bossDistance = 15.0f;
     static bool s_plinko = false;
-    static bool s_plinkoAlwaysMax = false;
 
     // Minigame flags
     static bool s_glassBridge = false;
-    static bool s_woodBridge = false;
     static bool s_autoHammer = false;
+
+    // Stone tele filters
+    static bool s_teleAllStones = false;
+    static bool s_teleSmallStones = false;
+    static bool s_teleMediumStones = false;
+    static bool s_teleLargeStones = false;
+    static bool s_autoBuyShovel = false;
 
     void Initialize() {
         ImGuiStyle& style = ImGui::GetStyle();
@@ -67,7 +70,7 @@ namespace Menu {
     // --------------------------------------------------------------------------
     static void RenderTabMain() {
         auto& mcfg = MainFeatures::GetConfig();
-        auto mstatus = MainFeatures::GetStatus();
+        auto mstats = MainFeatures::GetStats();
 
         ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "CHỨC NĂNG HỆ THỐNG & TỰ ĐỘNG");
         ImGui::Separator();
@@ -75,14 +78,13 @@ namespace Menu {
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Tự Động Bảo Quản (Auto Keep Fish):");
         ImGui::Checkbox("Bật Auto Bảo Quản", &mcfg.autoPreserveFish);
         ImGui::SliderFloat("Delay Bảo Quản (s)", &mcfg.autoPreserveDelay, 0.1f, 1.0f, "%.2f s");
-        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã bảo quản: %u con", mstatus.preservedFishCount);
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã bảo quản: %u con", mstats.fishPreservedCount);
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Tự Động Đóng Giao Diện:");
         ImGui::Checkbox("Tự Động Đóng Hộp Quà", &mcfg.autoCloseGift);
         ImGui::Checkbox("Tự Động Đóng Hộp Thẻ", &mcfg.autoCloseCardBox);
         ImGui::SliderFloat("Delay Đóng Giao Diện (s)", &mcfg.autoCloseDelay, 0.1f, 1.0f, "%.2f s");
-        ImGui::Checkbox("Auto Sửa Công Cụ (Cần / Vợt / Cuốc)", &mcfg.autoRepairTool);
     }
 
     // --------------------------------------------------------------------------
@@ -135,25 +137,24 @@ namespace Menu {
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Đập Đá & Khai Khoáng:");
-        ImGui::Checkbox("Auto Đập Đá", &mcfg.autoMine);
-        ImGui::Checkbox("Auto Đổi Map Đập Đá", &mcfg.autoChangeMap);
-        ImGui::SliderFloat("Delay Đổi Map Đá (s)", &mcfg.changeMapDelay, 1.0f, 10.0f, "%.1f s");
-        ImGui::Checkbox("Auto Nhặt Vật Phẩm", &mcfg.autoCollectItems);
-        ImGui::Checkbox("Tele Tất Cả Đá", &mcfg.teleAllStones);
-        ImGui::Checkbox("Tele Đá Nhỏ", &mcfg.teleSmallStones); ImGui::SameLine();
-        ImGui::Checkbox("Tele Đá Vừa", &mcfg.teleMediumStones); ImGui::SameLine();
-        ImGui::Checkbox("Tele Đá To", &mcfg.teleLargeStones);
+        ImGui::Checkbox("Auto Đập Đá", &mcfg.autoMineRocks);
+        ImGui::Checkbox("Auto Đổi Map Đập Đá", &mcfg.autoChangeMapMine);
+        ImGui::Checkbox("Auto Nhặt Vật Phẩm", &mcfg.autoPickupItems);
+        ImGui::Checkbox("Tele Tất Cả Đá", &s_teleAllStones);
+        ImGui::Checkbox("Tele Đá Nhỏ", &s_teleSmallStones); ImGui::SameLine();
+        ImGui::Checkbox("Tele Đá Vừa", &s_teleMediumStones); ImGui::SameLine();
+        ImGui::Checkbox("Tele Đá To", &s_teleLargeStones);
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Khai Quật:");
         ImGui::Checkbox("Auto Khai Quật", &mcfg.autoExcavate);
-        ImGui::Checkbox("Auto Mua Dụng Cụ Đào", &mcfg.autoBuyShovel);
+        ImGui::Checkbox("Auto Mua Dụng Cụ Đào", &s_autoBuyShovel);
         ImGui::SliderFloat("Delay Đào (s)", &mcfg.excavateDelay, 0.1f, 1.0f, "%.2f s");
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[3] Nông Trại:");
-        ImGui::Checkbox("Chặn Loading Nông Trại", &fcfg.blockFarmLoading);
         ImGui::Checkbox("Tự Động Thu & Bán", &fcfg.autoHarvest);
+        ImGui::Checkbox("Tự Thu & Bán (VIP)", &fcfg.autoHarvestSellVIP);
         ImGui::Checkbox("Giữ Biến Thể", &fcfg.keepVariants);
     }
 
@@ -184,12 +185,13 @@ namespace Menu {
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Minigame Party & Về Đích:");
-        ImGui::Checkbox("Auto Về Đích", &pcfg.autoGoal);
+        ImGui::Checkbox("Auto Về Đích", &pcfg.autoMinigameGoal);
         ImGui::Checkbox("Auto Đập Búa", &s_autoHammer);
         ImGui::Checkbox("Cầu Kính An Toàn", &s_glassBridge);
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Di Chuyển Nhân Vật:");
+        ImGui::Checkbox("Bật Hack Tốc Độ", &pcfg.speedHack);
         ImGui::SliderFloat("Tốc Độ Chạy", &pcfg.speedMultiplier, 1.0f, 10.0f, "%.1fx");
         ImGui::Checkbox("Nhảy Cao", &pcfg.highJump);
         ImGui::Checkbox("Đi Trên Không", &pcfg.walkOnAir);
@@ -206,20 +208,22 @@ namespace Menu {
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] ESP Sự Kiện Boss Rồng & Quái:");
-        ImGui::Checkbox("Bật Tổng ESP Boss / Quái", &ecfg.espMonster);
-        ImGui::Checkbox("Line Chỉ Đường", &ecfg.espMonsterLine);
-        ImGui::Checkbox("ESP Tên & Máu", &ecfg.espMonsterName);
-        ImGui::Checkbox("ESP Boss Rồng Đặc Biệt", &ecfg.espDragonBoss);
+        ImGui::Checkbox("Bật Tổng ESP Boss / Quái", &ecfg.espBossMonster);
+        ImGui::Checkbox("Line Chỉ Đường", &ecfg.espBossLine);
+        ImGui::Checkbox("Vòng Tròn Chân / Box", &ecfg.espBossBox);
+        ImGui::Checkbox("ESP Tên & Máu (HP Bar)", &ecfg.espBossHP);
+        ImGui::Checkbox("ESP Boss Rồng Đặc Biệt", &ecfg.espSpecialDragon);
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] ESP Thu Thập & Thế Giới:");
-        ImGui::Checkbox("ESP Vùng Câu Cá", &ecfg.espFishingZones);
+        ImGui::Checkbox("ESP Vùng Câu Cá", &ecfg.espFishingZone);
+        ImGui::Checkbox("Hiện Nút Tele Vùng Câu", &ecfg.showTeleFishingZone);
         ImGui::Checkbox("ESP Đá", &ecfg.espRocks);
         ImGui::Checkbox("ESP Côn Trùng", &ecfg.espInsects);
         ImGui::Checkbox("ESP Khai Quật", &ecfg.espExcavation);
         ImGui::Checkbox("ESP Kho Báu", &ecfg.espTreasure);
         ImGui::Checkbox("ESP Tất Cả Vật Phẩm", &ecfg.espAllItems);
-        ImGui::Checkbox("ESP Zombie Virus", &ecfg.espZombie);
+        ImGui::Checkbox("ESP Zombie Virus", &ecfg.espZombieVirus);
     }
 
     // --------------------------------------------------------------------------

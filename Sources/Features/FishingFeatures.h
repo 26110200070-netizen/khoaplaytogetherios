@@ -36,6 +36,8 @@ namespace FishingFeatures {
 
     void Initialize();
     void InstallHooks();
+    void Update();
+    void* GetLocalPlayerControl();
     Config& GetConfig();
     Status GetStatus();
     void ResetStats();

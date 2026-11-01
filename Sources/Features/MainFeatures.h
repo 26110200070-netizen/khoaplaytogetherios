@@ -19,6 +19,7 @@ namespace MainFeatures {
 
     void Initialize();
     void EnsureHooksInstalled();
+    void Update();
     Config& GetConfig();
     Stats GetStats();
     void ResetStats();

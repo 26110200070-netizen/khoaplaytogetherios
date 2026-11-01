@@ -9,6 +9,23 @@
 
 namespace Offsets {
     // --------------------------------------------------------------------------
+    // 0. SystemHelper (Global Unity System Access)
+    // --------------------------------------------------------------------------
+    namespace SystemHelper {
+        constexpr uintptr_t get_Account   = 0x3421108; // public static AccountSystem get_Account()
+        constexpr uintptr_t get_Dialog    = 0x341EA50; // public static DialogSystem get_Dialog()
+        constexpr uintptr_t get_Table     = 0x3415C50; // public static TableSystem get_Table()
+        constexpr uintptr_t get_Map       = 0x341F9E4; // public static MapSystem get_Map()
+        constexpr uintptr_t get_Actor     = 0x3421558; // public static ActorSystem get_Actor()
+        constexpr uintptr_t get_Fishing   = 0x3422020; // public static FishingSystem get_Fishing()
+        constexpr uintptr_t get_Chat      = 0x342235C; // public static ChatSystem get_Chat()
+
+        // DialogSystem methods
+        constexpr uintptr_t DialogSystem_FindTypeFirst = 0x2C72714; // public DialogUnit FindTypeFirst(eDialogType findtype)
+        constexpr uintptr_t DialogSystem_GetRewardPopup = 0x2C74650; // public DialogRewardPopup get_GetRewardPopup()
+    }
+
+    // --------------------------------------------------------------------------
     // 1. Fishing Subsystem
     // --------------------------------------------------------------------------
     namespace Fishing {

@@ -3,6 +3,7 @@
 #import "Utils/Memory.h"
 #import "Utils/Logging.h"
 #import <Foundation/Foundation.h>
+#import <QuartzCore/QuartzCore.h>
 
 namespace MainFeatures {
 
@@ -21,155 +22,143 @@ namespace MainFeatures {
     static void* g_activeResultItemView = nullptr;
     static void* g_activeResultItemList = nullptr;
 
+    typedef void* (*get_Dialog_t)();
+    static get_Dialog_t p_get_Dialog = nullptr;
+
+    typedef void* (*FindTypeFirst_t)(void* dialogSys, int findType);
+    static FindTypeFirst_t p_FindTypeFirst = nullptr;
+
     typedef void (*DialogFishingGetItem_OnClick_Close_t)(void* this_ptr);
     static DialogFishingGetItem_OnClick_Close_t p_DialogFishingGetItem_OnClick_Close = nullptr;
 
     typedef void (*DialogRewardPopup_OnClickYes_t)(void* this_ptr);
     static DialogRewardPopup_OnClickYes_t p_DialogRewardPopup_OnClickYes = nullptr;
 
+    typedef void (*DialogRewardPopup_DialogHide_t)(void* this_ptr, bool isDelete);
+    static DialogRewardPopup_DialogHide_t p_DialogRewardPopup_DialogHide = nullptr;
+
     typedef void (*DialogResultGetItemView_CloseFromBack_t)(void* this_ptr);
     static DialogResultGetItemView_CloseFromBack_t p_DialogResultGetItemView_CloseFromBack = nullptr;
 
-    typedef void (*DialogResultGetItemList_CloseFromBack_t)(void* this_ptr);
-    static DialogResultGetItemList_CloseFromBack_t p_DialogResultGetItemList_CloseFromBack = nullptr;
+    static double s_fishDialogOpenTime = 0.0;
+    static void* s_lastFishDialog = nullptr;
+
+    static double s_rewardDialogOpenTime = 0.0;
+    static void* s_lastRewardDialog = nullptr;
+
+    static double s_resultDialogOpenTime = 0.0;
+    static void* s_lastResultDialog = nullptr;
 
     // --------------------------------------------------------------------------
-    // Hooks: DialogFishingGetItem (Auto Bảo quản)
+    // Update loop running 60 FPS on Metal Render Thread
     // --------------------------------------------------------------------------
-    void (*orig_DialogFishingGetItem_DialogShow)(void* this_ptr) = nullptr;
-    void hook_DialogFishingGetItem_DialogShow(void* this_ptr) {
-        if (orig_DialogFishingGetItem_DialogShow) {
-            orig_DialogFishingGetItem_DialogShow(this_ptr);
-        }
-        g_activeFishingGetItem = this_ptr;
+    void Update() {
+        @try {
+            if (!p_get_Dialog) {
+                p_get_Dialog = (get_Dialog_t)Memory::GetRealOffset(Offsets::SystemHelper::get_Dialog);
+            }
+            if (!p_get_Dialog) return;
 
-        if (g_config.autoPreserveFish && p_DialogFishingGetItem_OnClick_Close && this_ptr) {
-            float delay = g_config.autoPreserveDelay;
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if (p_DialogFishingGetItem_OnClick_Close && this_ptr) {
-                    p_DialogFishingGetItem_OnClick_Close(this_ptr);
-                    g_stats.fishPreservedCount++;
+            void* dialogSys = p_get_Dialog();
+            if (!dialogSys || (uintptr_t)dialogSys < 0x100000000ULL) return;
+
+            if (!p_FindTypeFirst) {
+                p_FindTypeFirst = (FindTypeFirst_t)Memory::GetRealOffset(Offsets::SystemHelper::DialogSystem_FindTypeFirst);
+            }
+            if (!p_FindTypeFirst) return;
+
+            double now = CACurrentMediaTime();
+
+            // 1. Tự Động Bảo Quản Cá: eDialogType = 400 (FishingGetItem)
+            if (g_config.autoPreserveFish) {
+                void* fishDialog = p_FindTypeFirst(dialogSys, 400);
+                if (fishDialog && (uintptr_t)fishDialog >= 0x100000000ULL) {
+                    g_activeFishingGetItem = fishDialog;
+                    if (s_lastFishDialog != fishDialog) {
+                        s_lastFishDialog = fishDialog;
+                        s_fishDialogOpenTime = now;
+                    }
+                    if (now - s_fishDialogOpenTime >= (double)g_config.autoPreserveDelay) {
+                        if (!p_DialogFishingGetItem_OnClick_Close) {
+                            p_DialogFishingGetItem_OnClick_Close = (DialogFishingGetItem_OnClick_Close_t)Memory::GetRealOffset(Offsets::Dialogs::DialogFishingGetItem_OnClick_Close);
+                        }
+                        if (p_DialogFishingGetItem_OnClick_Close) {
+                            p_DialogFishingGetItem_OnClick_Close(fishDialog);
+                            g_stats.fishPreservedCount++;
+                            s_lastFishDialog = nullptr;
+                            s_fishDialogOpenTime = now + 1.0; // Cooldown
+                        }
+                    }
+                } else {
+                    s_lastFishDialog = nullptr;
                 }
-            });
+            }
+
+            // 2. Tự Động Đóng Hộp Thẻ: eDialogType = 96 (ResultGetItemView)
+            if (g_config.autoCloseCardBox) {
+                void* resultDialog = p_FindTypeFirst(dialogSys, 96);
+                if (resultDialog && (uintptr_t)resultDialog >= 0x100000000ULL) {
+                    g_activeResultItemView = resultDialog;
+                    if (s_lastResultDialog != resultDialog) {
+                        s_lastResultDialog = resultDialog;
+                        s_resultDialogOpenTime = now;
+                    }
+                    if (now - s_resultDialogOpenTime >= (double)g_config.autoCloseDelay) {
+                        if (!p_DialogResultGetItemView_CloseFromBack) {
+                            p_DialogResultGetItemView_CloseFromBack = (DialogResultGetItemView_CloseFromBack_t)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemView_CloseFromBack);
+                        }
+                        if (p_DialogResultGetItemView_CloseFromBack) {
+                            p_DialogResultGetItemView_CloseFromBack(resultDialog);
+                            g_stats.cardBoxesClosedCount++;
+                            s_lastResultDialog = nullptr;
+                            s_resultDialogOpenTime = now + 1.0;
+                        }
+                    }
+                } else {
+                    s_lastResultDialog = nullptr;
+                }
+            }
+
+            // 3. Tự Động Đóng Hộp Quà: eDialogType = 21 (RewardPopup)
+            if (g_config.autoCloseGift) {
+                void* rewardDialog = p_FindTypeFirst(dialogSys, 21);
+                if (rewardDialog && (uintptr_t)rewardDialog >= 0x100000000ULL) {
+                    g_activeRewardPopup = rewardDialog;
+                    if (s_lastRewardDialog != rewardDialog) {
+                        s_lastRewardDialog = rewardDialog;
+                        s_rewardDialogOpenTime = now;
+                    }
+                    if (now - s_rewardDialogOpenTime >= (double)g_config.autoCloseDelay) {
+                        if (!p_DialogRewardPopup_DialogHide) {
+                            p_DialogRewardPopup_DialogHide = (DialogRewardPopup_DialogHide_t)Memory::GetRealOffset(Offsets::Dialogs::DialogRewardPopup_DialogHide);
+                        }
+                        if (p_DialogRewardPopup_DialogHide) {
+                            p_DialogRewardPopup_DialogHide(rewardDialog, false);
+                            g_stats.giftsClosedCount++;
+                            s_lastRewardDialog = nullptr;
+                            s_rewardDialogOpenTime = now + 1.0;
+                        }
+                    }
+                } else {
+                    s_lastRewardDialog = nullptr;
+                }
+            }
+        } @catch (NSException *ex) {
+            // Suppress
         }
     }
-
-    // --------------------------------------------------------------------------
-    // Hooks: DialogRewardPopup (Đóng quà)
-    // --------------------------------------------------------------------------
-    void (*orig_DialogRewardPopup_DialogShow)(void* this_ptr) = nullptr;
-    void hook_DialogRewardPopup_DialogShow(void* this_ptr) {
-        if (orig_DialogRewardPopup_DialogShow) {
-            orig_DialogRewardPopup_DialogShow(this_ptr);
-        }
-        g_activeRewardPopup = this_ptr;
-
-        if (g_config.autoCloseGift && p_DialogRewardPopup_OnClickYes && this_ptr) {
-            float delay = g_config.autoCloseDelay;
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if (p_DialogRewardPopup_OnClickYes && this_ptr) {
-                    p_DialogRewardPopup_OnClickYes(this_ptr);
-                    g_stats.giftsClosedCount++;
-                }
-            });
-        }
-    }
-
-    // --------------------------------------------------------------------------
-    // Hooks: DialogResultGetItemView & DialogResultGetItemList (Đóng Hộp Thẻ / Gacha)
-    // --------------------------------------------------------------------------
-    void (*orig_DialogResultGetItemView_DialogShow)(void* this_ptr) = nullptr;
-    void hook_DialogResultGetItemView_DialogShow(void* this_ptr) {
-        if (orig_DialogResultGetItemView_DialogShow) {
-            orig_DialogResultGetItemView_DialogShow(this_ptr);
-        }
-        g_activeResultItemView = this_ptr;
-
-        if (g_config.autoCloseCardBox && p_DialogResultGetItemView_CloseFromBack && this_ptr) {
-            float delay = g_config.autoCloseDelay;
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if (p_DialogResultGetItemView_CloseFromBack && this_ptr) {
-                    p_DialogResultGetItemView_CloseFromBack(this_ptr);
-                    g_stats.cardBoxesClosedCount++;
-                }
-            });
-        }
-    }
-
-    void (*orig_DialogResultGetItemList_DialogShow)(void* this_ptr) = nullptr;
-    void hook_DialogResultGetItemList_DialogShow(void* this_ptr) {
-        if (orig_DialogResultGetItemList_DialogShow) {
-            orig_DialogResultGetItemList_DialogShow(this_ptr);
-        }
-        g_activeResultItemList = this_ptr;
-
-        if (g_config.autoCloseCardBox && p_DialogResultGetItemList_CloseFromBack && this_ptr) {
-            float delay = g_config.autoCloseDelay;
-            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delay * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-                if (p_DialogResultGetItemList_CloseFromBack && this_ptr) {
-                    p_DialogResultGetItemList_CloseFromBack(this_ptr);
-                    g_stats.cardBoxesClosedCount++;
-                }
-            });
-        }
-    }
-
-    // --------------------------------------------------------------------------
-    // Initialization: Hook all dialogs safely ONCE at startup
-    // --------------------------------------------------------------------------
-    static bool s_mainHooksInstalled = false;
 
     void EnsureHooksInstalled() {
-        if (s_mainHooksInstalled) return;
-        s_mainHooksInstalled = true;
-
-        LOG_INFO("Installing MainFeatures dialog hooks...");
-
-        p_DialogFishingGetItem_OnClick_Close = (DialogFishingGetItem_OnClick_Close_t)Memory::GetRealOffset(Offsets::Dialogs::DialogFishingGetItem_OnClick_Close);
-        p_DialogRewardPopup_OnClickYes = (DialogRewardPopup_OnClickYes_t)Memory::GetRealOffset(Offsets::Dialogs::DialogRewardPopup_OnClickYes);
-        p_DialogResultGetItemView_CloseFromBack = (DialogResultGetItemView_CloseFromBack_t)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemView_DialogCloseFromBack);
-        p_DialogResultGetItemList_CloseFromBack = (DialogResultGetItemList_CloseFromBack_t)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemList_DialogCloseFromBack);
-
-        Memory::InstallHook((void*)Memory::GetRealOffset(Offsets::Dialogs::DialogFishingGetItem_DialogShow),
-                            (void*)hook_DialogFishingGetItem_DialogShow,
-                            (void**)&orig_DialogFishingGetItem_DialogShow,
-                            "DialogFishingGetItem.DialogShow");
-
-        Memory::InstallHook((void*)Memory::GetRealOffset(Offsets::Dialogs::DialogRewardPopup_DialogShow),
-                            (void*)hook_DialogRewardPopup_DialogShow,
-                            (void**)&orig_DialogRewardPopup_DialogShow,
-                            "DialogRewardPopup.DialogShow");
-
-        Memory::InstallHook((void*)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemView_DialogShow),
-                            (void*)hook_DialogResultGetItemView_DialogShow,
-                            (void**)&orig_DialogResultGetItemView_DialogShow,
-                            "DialogResultGetItemView.DialogShow");
-
-        Memory::InstallHook((void*)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemList_DialogShow),
-                            (void*)hook_DialogResultGetItemList_DialogShow,
-                            (void**)&orig_DialogResultGetItemList_DialogShow,
-                            "DialogResultGetItemList.DialogShow");
-
-        LOG_SUCCESS("MainFeatures: Dialog hooks ACTIVE.");
+        LOG_INFO("MainFeatures dynamic runtime bindings ready.");
     }
 
     void Initialize() {
         EnsureHooksInstalled();
     }
 
-    Config& GetConfig() {
-        return g_config;
-    }
-
-    Stats GetStats() {
-        return g_stats;
-    }
-
-    void ResetStats() {
-        g_stats.fishPreservedCount = 0;
-        g_stats.giftsClosedCount = 0;
-        g_stats.cardBoxesClosedCount = 0;
-    }
+    Config& GetConfig() { return g_config; }
+    Stats GetStats() { return g_stats; }
+    void ResetStats() { g_stats = { 0, 0, 0 }; }
 
     void* GetActiveFishingGetItemDialog() { return g_activeFishingGetItem; }
     void* GetActiveRewardPopup() { return g_activeRewardPopup; }

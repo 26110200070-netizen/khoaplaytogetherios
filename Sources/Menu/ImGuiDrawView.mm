@@ -4,6 +4,8 @@
 #import "ImGuiDrawView.h"
 #import "Menu.h"
 #import "Features/ESPFeatures.h"
+#import "Features/FishingFeatures.h"
+#import "Features/MainFeatures.h"
 #import "IMGUI/imgui.h"
 #import "IMGUI/imgui_internal.h"
 #import "IMGUI/imgui_impl_metal.h"
@@ -255,6 +257,10 @@ static CGRect g_titleBarRect = CGRectMake(50, 40, 620, 45);
 
             ImGui_ImplMetal_NewFrame(renderPassDesc);
             ImGui::NewFrame();
+
+            // Run active automation loops (Auto Câu, Auto Bảo Quản, Auto Đóng Hộp Thẻ)
+            MainFeatures::Update();
+            FishingFeatures::Update();
 
             // Render ESP overlays
             ESPFeatures::RenderESP();

@@ -7,7 +7,7 @@
 namespace FishingFeatures {
 
     static Config g_config = {
-        false,  // autoFishingEnabled (Merged normal + big fish)
+        false,  // autoFishingEnabled
         true,   // autoCastRod
         1.2f,   // castDelay (1.2s)
         true,   // autoHitBite
@@ -28,8 +28,17 @@ namespace FishingFeatures {
         0,
         false,
         false,
-        "None"
+        "Đang đợi người chơi..."
     };
+
+    typedef void* (*get_Actor_t)();
+    static get_Actor_t p_get_Actor = nullptr;
+
+    typedef void* (*get_MyActorCharacter_t)(void* actorSys);
+    static get_MyActorCharacter_t p_get_MyActorCharacter = nullptr;
+
+    typedef void* (*get_ActorCharacterControl_t)(void* myChar);
+    static get_ActorCharacterControl_t p_get_ActorCharacterControl = nullptr;
 
     typedef void (*OnClickFishing_t)(void* this_ptr);
     static OnClickFishing_t p_OnClickFishing = nullptr;
@@ -57,46 +66,99 @@ namespace FishingFeatures {
 
     static const char* GetFishingStateName(int state) {
         switch (state) {
-            case 0: return "None";
-            case 1: return "Casting";
-            case 2: return "Search";
-            case 3: return "SearchResult";
-            case 4: return "Idle";
-            case 5: return "Hit (!)";
-            case 6: return "Fighting";
-            case 7: return "Catch";
-            case 8: return "Fail";
-            case 9: return "Boast";
-            case 10: return "Finish";
-            case 11: return "CastingFail";
-            case 12: return "Miss";
-            case 13: return "BigFish_RaidEnter";
-            case 14: return "BigFish_RaidSync";
-            case 15: return "BigFish_Begin";
-            case 16: return "BigFish_Pumpin";
-            case 17: return "BigFish_Drag";
-            case 18: return "BigFish_Tug";
-            case 19: return "BigFish_Fighting";
-            case 20: return "BigFish_Catch";
-            case 21: return "BigFish_Miss";
-            default: return "Unknown";
+            case 0: return "Nghỉ (Chưa quăng)";
+            case 1: return "Đang Quăng Cần";
+            case 2: return "Đang Dò Cá";
+            case 3: return "Cá Đã Thấy Mồi";
+            case 4: return "Chờ Cá Cắn";
+            case 5: return "Cá Cắn Câu (!)";
+            case 6: return "Đang Giằng Co";
+            case 7: return "Đã Câu Được Cá";
+            case 8: return "Câu Thất Bại";
+            case 9: return "Khoe Cá";
+            case 10: return "Hoàn Thành";
+            case 11: return "Quăng Hụt";
+            case 12: return "Hụt Mồi";
+            case 13: return "Cá Khổng Lồ: Vào Trận";
+            case 14: return "Cá Khổng Lồ: Đồng Bộ";
+            case 15: return "Cá Khổng Lồ: Bắt Đầu";
+            case 16: return "Cá Khổng Lồ: Kéo (Pumpin)";
+            case 17: return "Cá Khổng Lồ: Rê (Drag)";
+            case 18: return "Cá Khổng Lồ: Giật (Tug)";
+            case 19: return "Cá Khổng Lồ: Chiến Đấu";
+            case 20: return "Cá Khổng Lồ: Bắt Thành Công";
+            case 21: return "Cá Khổng Lồ: Đứt Dây";
+            default: return "Đang Câu...";
         }
     }
 
-    // --------------------------------------------------------------------------
-    // Hook: ActorDefaultControlPlayer.OnLateUpdate
-    // Runs on Unity engine thread every frame for the local player
-    // --------------------------------------------------------------------------
-    void (*orig_OnLateUpdate)(void* this_ptr) = nullptr;
-    void hook_OnLateUpdate(void* this_ptr) {
-        if (orig_OnLateUpdate) {
-            orig_OnLateUpdate(this_ptr);
+    void* GetLocalPlayerControl() {
+        if (!p_get_Actor) {
+            p_get_Actor = (get_Actor_t)Memory::GetRealOffset(Offsets::SystemHelper::get_Actor);
         }
+        if (!p_get_Actor) return nullptr;
 
-        if (!this_ptr || (uintptr_t)this_ptr < 0x100000000ULL) return;
-        g_status.activePlayerController = this_ptr;
+        void* actorSys = p_get_Actor();
+        if (!actorSys || (uintptr_t)actorSys < 0x100000000ULL) return nullptr;
 
+        if (!p_get_MyActorCharacter) {
+            p_get_MyActorCharacter = (get_MyActorCharacter_t)Memory::GetRealOffset(0x37BE104);
+        }
+        if (!p_get_MyActorCharacter) return nullptr;
+
+        void* myChar = p_get_MyActorCharacter(actorSys);
+        if (!myChar || (uintptr_t)myChar < 0x100000000ULL) return nullptr;
+
+        if (!p_get_ActorCharacterControl) {
+            p_get_ActorCharacterControl = (get_ActorCharacterControl_t)Memory::GetRealOffset(0x381A17C);
+        }
+        if (!p_get_ActorCharacterControl) return nullptr;
+
+        void* myControl = p_get_ActorCharacterControl(myChar);
+        if (!myControl || (uintptr_t)myControl < 0x100000000ULL) return nullptr;
+
+        return myControl;
+    }
+
+    // --------------------------------------------------------------------------
+    // Update loop running 60 FPS on Metal Render Thread
+    // --------------------------------------------------------------------------
+    void Update() {
         @try {
+            void* player = GetLocalPlayerControl();
+            if (!player) {
+                g_status.activePlayerController = nullptr;
+                g_status.lastStateName = "Đang vào map...";
+                return;
+            }
+
+            g_status.activePlayerController = player;
+
+            if (!p_get_HasFishingPole) {
+                p_get_HasFishingPole = (get_HasFishingPole_t)Memory::GetRealOffset(Offsets::Fishing::get_HasFishingPole);
+            }
+            if (!p_get_FishingState) {
+                p_get_FishingState = (get_FishingState_t)Memory::GetRealOffset(Offsets::Fishing::get_FishingState);
+            }
+            if (!p_OnClickFishing) {
+                p_OnClickFishing = (OnClickFishing_t)Memory::GetRealOffset(Offsets::Fishing::OnClickFishing);
+            }
+            if (!p_FishingCancel) {
+                p_FishingCancel = (FishingCancel_t)Memory::GetRealOffset(Offsets::Fishing::FishingCancel);
+            }
+
+            bool hasPole = (p_get_HasFishingPole && p_get_HasFishingPole(player));
+            if (!hasPole) {
+                g_status.lastStateName = "Chưa cầm cần câu";
+                g_status.isFishingActive = false;
+                return;
+            }
+
+            int currentState = p_get_FishingState ? p_get_FishingState(player) : 0;
+            g_status.currentPlayerState = (GameTypes::eFishingState)currentState;
+            g_status.lastStateName = GetFishingStateName(currentState);
+            g_status.isFishingActive = (currentState > 0 && currentState != 10);
+
             // Safe toggle transition detection
             if (g_config.autoFishingEnabled && !s_wasAutoFishing) {
                 s_waitingRecast = false;
@@ -106,54 +168,46 @@ namespace FishingFeatures {
             }
             s_wasAutoFishing = g_config.autoFishingEnabled;
 
-            if (!g_config.autoFishingEnabled || !p_get_FishingState) return;
-
-            // Ensure player has a fishing pole equipped before executing any action
-            if (p_get_HasFishingPole && !p_get_HasFishingPole(this_ptr)) {
-                return;
-            }
-
-            // Handle shadow cancellation safely on the player thread
-            if (s_needFilterCancel) {
-                s_needFilterCancel = false;
-                if (p_FishingCancel) {
-                    p_FishingCancel(this_ptr);
-                } else if (p_OnClickFishing) {
-                    p_OnClickFishing(this_ptr);
-                }
-                return;
-            }
+            if (!g_config.autoFishingEnabled) return;
 
             double now = CACurrentMediaTime();
-            int currentState = p_get_FishingState(this_ptr);
 
             if (currentState != s_lastState) {
                 s_lastState = currentState;
                 s_stateChangeTime = now;
                 s_hasHitCurrentBite = false;
-                g_status.currentPlayerState = (GameTypes::eFishingState)currentState;
-                g_status.lastStateName = GetFishingStateName(currentState);
             }
 
-            // 1. Nhận diện cắn câu (Dấu chấm than ! - State 5)
+            // Xử lý hủy quăng nếu dính bóng cá đã bị lọc bỏ
+            if (s_needFilterCancel) {
+                s_needFilterCancel = false;
+                if (p_FishingCancel) {
+                    p_FishingCancel(player);
+                } else if (p_OnClickFishing) {
+                    p_OnClickFishing(player);
+                }
+                return;
+            }
+
+            // 1. Nhận diện cá cắn câu (Dấu chấm than ! - State 5)
             if (currentState == 5) {
                 if (!s_hasHitCurrentBite) {
                     double elapsed = now - s_stateChangeTime;
                     if (elapsed >= (double)g_config.hitReactionDelay) {
                         s_hasHitCurrentBite = true;
                         if (p_OnClickFishing) {
-                            p_OnClickFishing(this_ptr);
+                            p_OnClickFishing(player);
                         }
                     }
                 }
             }
-            // 2. Tự động giải Minigame cá khổng lồ / kéo cá (States 16, 17, 18, 19)
+            // 2. Tự động giải Minigame cá khổng lồ (States 16, 17, 18, 19)
             else if (currentState == 16 || currentState == 17 || currentState == 18 || currentState == 19) {
                 g_status.isInMinigame = true;
                 if (now - s_lastActionTime >= (double)g_config.stunTapInterval) {
                     s_lastActionTime = now;
                     if (p_OnClickFishing) {
-                        p_OnClickFishing(this_ptr);
+                        p_OnClickFishing(player);
                     }
                 }
             }
@@ -184,40 +238,16 @@ namespace FishingFeatures {
                     if (elapsedSinceFinish >= (double)g_config.castDelay) {
                         s_waitingRecast = false;
                         if (g_config.autoCastRod && p_OnClickFishing) {
-                            p_OnClickFishing(this_ptr);
+                            p_OnClickFishing(player);
                         }
                     }
-                }
-            }
-        } @catch (NSException *ex) {
-            // Suppress exceptions to guarantee game stability
-        }
-    }
-
-    // --------------------------------------------------------------------------
-    // Hook: FishShadowController.InitilaizeFish
-    // Lọc bóng cá: Nếu bóng cá bị bỏ chọn, giật cần về ngay lập tức để quăng lại
-    // --------------------------------------------------------------------------
-    void (*orig_InitilaizeFish)(void* this_ptr, void* floatControl, uint32_t level, void* waterCol, bool noDelay, bool isBigFish) = nullptr;
-    void hook_InitilaizeFish(void* this_ptr, void* floatControl, uint32_t level, void* waterCol, bool noDelay, bool isBigFish) {
-        if (orig_InitilaizeFish) {
-            orig_InitilaizeFish(this_ptr, floatControl, level, waterCol, noDelay, isBigFish);
-        }
-
-        @try {
-            if (!g_config.autoFishingEnabled) return;
-            if (!g_status.activePlayerController) return;
-
-            // Verify that this fish actually belongs to OUR active rod float (offset 0x408)
-            void* myFloat = *(void**)((uintptr_t)g_status.activePlayerController + 0x408);
-            if (myFloat && floatControl && myFloat != floatControl) {
-                return; // Belongs to another player's rod, ignore!
-            }
-
-            if (level >= 1 && level <= 7) {
-                if (!g_config.filterShadow[level]) {
-                    // Bóng cá bị lọc bỏ -> gắn cờ cancel an toàn
-                    s_needFilterCancel = true;
+                } else if (g_config.autoCastRod && now - s_stateChangeTime >= (double)g_config.castDelay) {
+                    // Quăng mẻ đầu tiên khi bật auto
+                    s_waitingRecast = false;
+                    s_stateChangeTime = now;
+                    if (p_OnClickFishing) {
+                        p_OnClickFishing(player);
+                    }
                 }
             }
         } @catch (NSException *ex) {
@@ -225,46 +255,8 @@ namespace FishingFeatures {
         }
     }
 
-    // --------------------------------------------------------------------------
-    // Safe Subsystem Initialization
-    // --------------------------------------------------------------------------
-    static bool s_hooksInstalled = false;
-
-    void InstallHooks() {
-        if (s_hooksInstalled) return;
-        s_hooksInstalled = true;
-
-        LOG_INFO("Installing Fishing Subsystem Hooks...");
-
-        p_OnClickFishing     = (OnClickFishing_t)Memory::GetRealOffset(Offsets::Fishing::OnClickFishing);
-        p_FishingCancel      = (FishingCancel_t)Memory::GetRealOffset(Offsets::Fishing::FishingCancel);
-        p_get_FishingState   = (get_FishingState_t)Memory::GetRealOffset(Offsets::Fishing::get_FishingState);
-        p_get_HasFishingPole = (get_HasFishingPole_t)Memory::GetRealOffset(Offsets::Fishing::get_HasFishingPole);
-        p_get_IsFishing      = (get_IsFishing_t)Memory::GetRealOffset(Offsets::Fishing::get_IsFishing);
-
-        // 1. Hook ActorDefaultControlPlayer.OnLateUpdate
-        uintptr_t lateUpdateAddr = Memory::GetRealOffset(Offsets::Fishing::OnLateUpdate);
-        if (lateUpdateAddr >= 0x100000000ULL) {
-            Memory::InstallHook((void*)lateUpdateAddr,
-                (void*)hook_OnLateUpdate,
-                (void**)&orig_OnLateUpdate,
-                "ActorDefaultControlPlayer.OnLateUpdate");
-        }
-
-        // 2. Hook FishShadowController.InitilaizeFish (RVA 0x2D22FE8)
-        uintptr_t initFishAddr = Memory::GetRealOffset(0x2D22FE8);
-        if (initFishAddr >= 0x100000000ULL) {
-            Memory::InstallHook((void*)initFishAddr,
-                (void*)hook_InitilaizeFish,
-                (void**)&orig_InitilaizeFish,
-                "FishShadowController.InitilaizeFish");
-        }
-
-        LOG_SUCCESS("Fishing Subsystem Hooks Installed Successfully!");
-    }
-
     void Initialize() {
-        InstallHooks();
+        LOG_INFO("Fishing Subsystem Initialized with SystemHelper dynamic runtime binding.");
     }
 
     Config& GetConfig() { return g_config; }
@@ -276,14 +268,16 @@ namespace FishingFeatures {
     }
 
     void TriggerCast() {
-        if (g_status.activePlayerController && p_OnClickFishing) {
-            p_OnClickFishing(g_status.activePlayerController);
+        void* player = GetLocalPlayerControl();
+        if (player && p_OnClickFishing) {
+            p_OnClickFishing(player);
         }
     }
 
     void TriggerReel() {
-        if (g_status.activePlayerController && p_OnClickFishing) {
-            p_OnClickFishing(g_status.activePlayerController);
+        void* player = GetLocalPlayerControl();
+        if (player && p_OnClickFishing) {
+            p_OnClickFishing(player);
         }
     }
 }

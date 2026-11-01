@@ -92,6 +92,7 @@ namespace Menu {
     // --------------------------------------------------------------------------
     static void RenderTabFishing() {
         auto& fcfg = FishingFeatures::GetConfig();
+        auto fstatus = FishingFeatures::GetStatus();
         auto& icfg = InsectFeatures::GetConfig();
 
         ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "CÂU CÁ & BẮT BỌ");
@@ -99,6 +100,18 @@ namespace Menu {
 
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Auto Câu Cá:");
         ImGui::Checkbox("Bật Auto Câu Cá", &fcfg.autoFishingEnabled);
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Trạng thái: %s", fstatus.lastStateName.c_str());
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã câu: %u con | Khổng lồ: %u", fstatus.totalFishCaught, fstatus.bigFishCompleted);
+
+        if (ImGui::Button("Thử Quăng Cần", ImVec2(130, 28))) {
+            FishingFeatures::TriggerCast();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Thử Giật Cần", ImVec2(130, 28))) {
+            FishingFeatures::TriggerReel();
+        }
+
         if (fcfg.autoFishingEnabled) {
             ImGui::Checkbox("Tự Động Quăng Cần", &fcfg.autoCastRod);
             ImGui::SliderFloat("Delay Quăng Lại (s)", &fcfg.castDelay, 0.5f, 3.0f, "%.2f s");
@@ -277,8 +290,8 @@ namespace Menu {
             return;
         }
 
-        // Left Navigation Bar (##category)
-        ImGui::BeginChild("##category", ImVec2(140, 0), true);
+        // Left Navigation Bar (##category) - Kéo lên xuống bằng tay mượt mà
+        ImGui::BeginChild("##category", ImVec2(145, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
         auto RenderTabButton = [](const char* label, Tab tab) {
             bool selected = (s_currentTab == tab);
@@ -290,7 +303,7 @@ namespace Menu {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0.75f, 1.0f));
             }
 
-            if (ImGui::Button(label, ImVec2(-1, 34))) {
+            if (ImGui::Button(label, ImVec2(-1, 36))) {
                 s_currentTab = tab;
             }
 
@@ -310,8 +323,8 @@ namespace Menu {
 
         ImGui::SameLine();
 
-        // Right Content Area (##MainContentPanel)
-        ImGui::BeginChild("##MainContentPanel", ImVec2(0, 0), true);
+        // Right Content Area (##MainContentPanel) - Kéo cuộn cảm ứng tự do
+        ImGui::BeginChild("##MainContentPanel", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
 
         switch (s_currentTab) {
             case Tab::Main:       RenderTabMain(); break;

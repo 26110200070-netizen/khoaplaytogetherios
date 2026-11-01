@@ -16,8 +16,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Theos & iOS SDK
+      - name: Setup Theos & Dependencies
         run: |
+          brew install ldid
           git clone --depth=1 --recursive https://github.com/theos/theos.git ~/theos
           curl -LO https://github.com/theos/sdks/archive/refs/heads/master.tar.gz
           tar -xzf master.tar.gz -C ~/theos/sdks --strip-components=1

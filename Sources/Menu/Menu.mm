@@ -255,7 +255,10 @@ namespace Menu {
         ImGui::Separator();
 
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Tiện Ích:");
-        ImGui::Checkbox("Bỏ Qua Video Ads 0s (Skip Ads SDK)", &ucfg.skipAdsSDK);
+        ImGui::Checkbox("Bỏ Qua Video Ads 0s (Skip Ads SDK)", &ucfg.skipAds);
+        ImGui::Checkbox("Bỏ Qua Ads Bằng Proxy", &ucfg.skipAdsProxy);
+        ImGui::Checkbox("Chặn Kết Nối Ads HTTP", &ucfg.blockHttpAds);
+        ImGui::Checkbox("Stream Mode (Ẩn Menu Khi Quay Màn Hình)", &ucfg.streamMode);
         ImGui::Checkbox("Giữ Sáng Màn Hình (No Sleep)", &ucfg.noSleep);
         ImGui::Checkbox("Auto Spam Chat", &ucfg.autoSpamChat);
     }

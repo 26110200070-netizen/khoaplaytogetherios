@@ -105,7 +105,7 @@ namespace MainFeatures {
                     }
                     if (now - s_resultDialogOpenTime >= (double)g_config.autoCloseDelay) {
                         if (!p_DialogResultGetItemView_CloseFromBack) {
-                            p_DialogResultGetItemView_CloseFromBack = (DialogResultGetItemView_CloseFromBack_t)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemView_CloseFromBack);
+                            p_DialogResultGetItemView_CloseFromBack = (DialogResultGetItemView_CloseFromBack_t)Memory::GetRealOffset(Offsets::Dialogs::DialogResultGetItemView_DialogCloseFromBack);
                         }
                         if (p_DialogResultGetItemView_CloseFromBack) {
                             p_DialogResultGetItemView_CloseFromBack(resultDialog);

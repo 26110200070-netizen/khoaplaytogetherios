@@ -12,8 +12,8 @@ TWEAK_NAME = KhoaPlaytogether
 
 $(TWEAK_NAME)_FRAMEWORKS = UIKit Foundation Metal MetalKit QuartzCore CoreGraphics Security SystemConfiguration
 
-$(TWEAK_NAME)_CCFLAGS = -fno-rtti -fvisibility=hidden -DNDEBUG -std=c++17 -I./Sources -I./Includes -I./Includes/IMGUI
-$(TWEAK_NAME)_CFLAGS = -fobjc-arc -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-value -I./Sources -I./Includes -I./Includes/IMGUI
+$(TWEAK_NAME)_CCFLAGS = -fno-rtti -fvisibility=hidden -DNDEBUG -std=c++17 -Wno-error -Wno-nontrivial-memcall -Wno-deprecated-declarations -I./Sources -I./Includes -I./Includes/IMGUI
+$(TWEAK_NAME)_CFLAGS = -fobjc-arc -Wno-error -Wno-nontrivial-memcall -Wno-deprecated-declarations -Wno-unused-variable -Wno-unused-value -I./Sources -I./Includes -I./Includes/IMGUI
 
 $(TWEAK_NAME)_LDFLAGS += -L./Libraries -ldobby -lz -liconv
 

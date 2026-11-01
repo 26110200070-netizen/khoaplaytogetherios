@@ -153,10 +153,10 @@ namespace Menu {
         ImGui::Checkbox("Auto Đập Đá", &mcfg.autoMineRocks);
         ImGui::Checkbox("Auto Đổi Map Đập Đá", &mcfg.autoChangeMapMine);
         ImGui::Checkbox("Auto Nhặt Vật Phẩm", &mcfg.autoPickupItems);
-        ImGui::Checkbox("Tele Tất Cả Đá", &s_teleAllStones);
-        ImGui::Checkbox("Tele Đá Nhỏ", &s_teleSmallStones); ImGui::SameLine();
-        ImGui::Checkbox("Tele Đá Vừa", &s_teleMediumStones); ImGui::SameLine();
-        ImGui::Checkbox("Tele Đá To", &s_teleLargeStones);
+        ImGui::Checkbox("Tele Tất Cả Đá", &mcfg.teleAllStones);
+        ImGui::Checkbox("Tele Đá Nhỏ", &mcfg.teleSmallStones); ImGui::SameLine();
+        ImGui::Checkbox("Tele Đá Vừa", &mcfg.teleMediumStones); ImGui::SameLine();
+        ImGui::Checkbox("Tele Đá To", &mcfg.teleLargeStones);
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Khai Quật:");

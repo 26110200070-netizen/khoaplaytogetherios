@@ -44,6 +44,7 @@ namespace ESPFeatures {
 
     void Initialize();
     void EnsureHooksInstalled();
+    void Update();
     Config& GetConfig();
     bool IsEnabled();
 

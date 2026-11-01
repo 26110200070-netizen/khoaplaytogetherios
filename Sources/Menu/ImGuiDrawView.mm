@@ -6,6 +6,10 @@
 #import "Features/ESPFeatures.h"
 #import "Features/FishingFeatures.h"
 #import "Features/MainFeatures.h"
+#import "Features/MiningFeatures.h"
+#import "Features/InsectFeatures.h"
+#import "Features/PlayerFeatures.h"
+#import "Features/FarmFeatures.h"
 #import "IMGUI/imgui.h"
 #import "IMGUI/imgui_internal.h"
 #import "IMGUI/imgui_impl_metal.h"
@@ -258,9 +262,14 @@ static CGRect g_titleBarRect = CGRectMake(50, 40, 620, 45);
             ImGui_ImplMetal_NewFrame(renderPassDesc);
             ImGui::NewFrame();
 
-            // Run active automation loops (Auto Câu, Auto Bảo Quản, Auto Đóng Hộp Thẻ)
+            // Run active automation loops (Auto Câu, Auto Bảo Quản, Đập Đá, Bắt Bọ, Player Mods, Nông Trại, ESP)
             MainFeatures::Update();
             FishingFeatures::Update();
+            MiningFeatures::Update();
+            InsectFeatures::Update();
+            PlayerFeatures::Update();
+            FarmFeatures::Update();
+            ESPFeatures::Update();
 
             // Render ESP overlays
             ESPFeatures::RenderESP();

@@ -18,6 +18,7 @@ namespace InsectFeatures {
 
     void Initialize();
     void EnsureHooksInstalled();
+    void Update();
     Config& GetConfig();
     Stats GetStats();
     void TriggerNetSwing();

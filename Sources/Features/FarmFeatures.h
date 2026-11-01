@@ -17,6 +17,7 @@ namespace FarmFeatures {
 
     void Initialize();
     void EnsureHooksInstalled();
+    void Update();
     Config& GetConfig();
     Stats GetStats();
     void TriggerHarvestAllVIP();

@@ -18,6 +18,8 @@ namespace Offsets {
         constexpr uintptr_t get_Map       = 0x341F9E4; // public static MapSystem get_Map()
         constexpr uintptr_t get_Actor     = 0x3421558; // public static ActorSystem get_Actor()
         constexpr uintptr_t get_Fishing   = 0x3422020; // public static FishingSystem get_Fishing()
+        constexpr uintptr_t get_Insect    = 0x34229D4; // public static InsectSystem get_Insect()
+        constexpr uintptr_t get_Collect   = 0x3422AE8; // public static CollectSystem get_Collect()
         constexpr uintptr_t get_Chat      = 0x342235C; // public static ChatSystem get_Chat()
 
         // DialogSystem methods
@@ -133,5 +135,26 @@ namespace Offsets {
         constexpr uintptr_t Camera_WorldToScreenPoint = 0xA165F00; // public Vector3 WorldToScreenPoint(Vector3)
         constexpr uintptr_t Transform_get_position   = 0xA227EBC; // public Vector3 get_position()
         constexpr uintptr_t Transform_set_position   = 0xA227FD0; // public void set_position(Vector3)
+        constexpr uintptr_t Component_get_transform  = 0xA208AD0; // public Transform get_transform()
+    }
+
+    // --------------------------------------------------------------------------
+    // 7. Kinematic Character Controller & Motor
+    // --------------------------------------------------------------------------
+    namespace Kinematic {
+        constexpr uintptr_t Motor_SetPosition                               = 0x32081B0; // SetPosition(Vector3, bool)
+        constexpr uintptr_t Motor_SetCapsuleCollisionsActivation           = 0x3208180; // SetCapsuleCollisionsActivation(bool)
+        constexpr uintptr_t Motor_SetMovementCollisionsSolvingActivation   = 0x32081A0; // SetMovementCollisionsSolvingActivation(bool)
+        constexpr uintptr_t Motor_set_CheatDetect                          = 0x32072F0; // set_CheatDetect(bool)
+        constexpr uintptr_t Motor_get_TransientPosition                     = 0x32071D0; // get_TransientPosition()
+    }
+
+    // --------------------------------------------------------------------------
+    // 8. Collect & Insect Target Discovery
+    // --------------------------------------------------------------------------
+    namespace Collect {
+        constexpr uintptr_t MapObject_get_DetectTargetPos = 0x3980120; // MapObjectManager.get_DetectTargetPos()
+        constexpr uintptr_t Insect_get_DetectTargetPos    = 0x2DFB88C; // InsectController.get_DetectTargetPos()
+        constexpr uintptr_t Insect_get_LiveInsectList     = 0x2DFFC44; // InsectSystem.get_LiveInsectList()
     }
 }

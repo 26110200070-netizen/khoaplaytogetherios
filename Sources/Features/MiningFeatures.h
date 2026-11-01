@@ -9,6 +9,10 @@ namespace MiningFeatures {
         bool autoChangeMapPickup;
         bool autoExcavate;
         float excavateDelay;
+        bool teleAllStones;
+        bool teleSmallStones;
+        bool teleMediumStones;
+        bool teleLargeStones;
     };
 
     struct Stats {
@@ -18,6 +22,7 @@ namespace MiningFeatures {
 
     void Initialize();
     void EnsureHooksInstalled();
+    void Update();
     Config& GetConfig();
     Stats GetStats();
     void TriggerPickaxHit();

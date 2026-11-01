@@ -11,6 +11,7 @@
 #import "Features/PlayerFeatures.h"
 #import "Features/UtilityFeatures.h"
 #import "Features/MapFeatures.h"
+#import "Features/ESPFeatures.h"
 #import "Debug/DebugView.h"
 #import "Utils/Logging.h"
 
@@ -73,7 +74,10 @@ static ModLoader *s_instance = nil;
     // 9. Map Features (Teleport 5 verified maps)
     MapFeatures::Initialize();
 
-    // 10. Diagnostics
+    // 10. ESP Features (WorldToScreen Overlays)
+    ESPFeatures::Initialize();
+
+    // 11. Diagnostics
     DebugView::Initialize();
 
     LOG_SUCCESS("All subsystems successfully initialized and active!");

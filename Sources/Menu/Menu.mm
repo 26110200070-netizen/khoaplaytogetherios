@@ -8,6 +8,7 @@
 #import "Features/PlayerFeatures.h"
 #import "Features/UtilityFeatures.h"
 #import "Features/MapFeatures.h"
+#import "Features/ESPFeatures.h"
 #import <UIKit/UIKit.h>
 
 namespace Menu {
@@ -194,20 +195,37 @@ namespace Menu {
     // TAB 4: HIỂN THỊ ESP
     // --------------------------------------------------------------------------
     static void RenderTabESP() {
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP THU THẬP & THẾ GIỚI");
+        auto& espCfg = ESPFeatures::GetConfig();
+
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP SỰ KIỆN BOSS RỒNG & QUÁI");
         ImGui::Separator();
-        ImGui::Checkbox("ESP Vùng Câu Cá", &s_espFishing);
-        ImGui::Checkbox("ESP Đá & Khoáng Sản", &s_espRocks);
-        ImGui::Checkbox("ESP Côn Trùng", &s_espInsects);
-        ImGui::Checkbox("ESP Khai Quật / Kho Báu", &s_espTreasure);
-        ImGui::Checkbox("ESP Tất Cả Vật Phẩm", &s_espAllItems);
+        ImGui::Checkbox("Bật Tổng ESP Boss / Quái", &espCfg.espBossMonster);
+        ImGui::Checkbox("Line Chỉ Đường Boss / Quái", &espCfg.espBossLine);
+        ImGui::Checkbox("Vòng Tròn Chân Raycast / Box", &espCfg.espBossBox);
+        ImGui::Checkbox("Tên Quái & Thanh Máu (HP Bar)", &espCfg.espBossHP);
+        ImGui::Checkbox("ESP Boss Rồng Đặc Biệt", &espCfg.espSpecialDragon);
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP BOSS & QUÁI");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP THU THẬP & THẾ GIỚI");
         ImGui::Separator();
-        ImGui::Checkbox("Bật Tổng ESP Boss / Quái", &s_espBoss);
-        ImGui::Checkbox("Line Chỉ Đường Quái", &s_espBossLine);
-        ImGui::Checkbox("Tên Quái & Thanh Máu (HP Bar)", &s_espBossHP);
+        ImGui::Checkbox("ESP Vùng Câu Cá", &espCfg.espFishingZone);
+        ImGui::Checkbox("Hiện Nút Tele Vùng Câu", &espCfg.showTeleFishingZone);
+        ImGui::Checkbox("ESP Đá", &espCfg.espRocks);
+        ImGui::Checkbox("ESP Côn Trùng", &espCfg.espInsects);
+        ImGui::Checkbox("ESP Khai Quật", &espCfg.espExcavation);
+        ImGui::Checkbox("ESP Kho Báu", &espCfg.espTreasure);
+        ImGui::Checkbox("ESP Tất Cả Vật Phẩm", &espCfg.espAllItems);
+        ImGui::Checkbox("Hiện Nút Tele Tất Cả Vật Phẩm", &espCfg.showTeleAllItems);
+        ImGui::Checkbox("ESP Vật Phẩm Sự Kiện", &espCfg.espEventItems);
+        ImGui::Checkbox("Hiện Nút Tele Sự Kiện", &espCfg.showTeleEventItems);
+        ImGui::Checkbox("ESP Nhiệm Vụ NPC", &espCfg.espNPCQuest);
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP MINIGAME & KHÁC");
+        ImGui::Separator();
+        ImGui::Checkbox("ESP Zombie Virus", &espCfg.espZombieVirus);
+        ImGui::Checkbox("Hiện Nút Tele Zombie Virus", &espCfg.showTeleZombieVirus);
+        ImGui::Checkbox("ESP Auto Move / Path", &espCfg.espAutoPath);
     }
 
     // --------------------------------------------------------------------------

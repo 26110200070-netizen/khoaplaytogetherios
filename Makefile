@@ -31,6 +31,7 @@ $(TWEAK_NAME)_FILES = \
     Sources/Features/PlayerFeatures.mm \
     Sources/Features/UtilityFeatures.mm \
     Sources/Features/MapFeatures.mm \
+    Sources/Features/ESPFeatures.mm \
     Sources/Features/AntiBan.mm \
     Sources/Debug/DebugView.mm \
     Sources/Utils/Memory.mm \

@@ -104,4 +104,14 @@ namespace Offsets {
         constexpr uintptr_t SendToKMGFinishGoal           = 0x35DEEE0; // NetNativeProtocol.SendToKMGFinishGoal(...)
         constexpr uintptr_t SendToSchoolQuestionResult    = 0x36080BC; // NetNativeProtocol.SendToSchoolQuestionResult(...)
     }
+
+    // --------------------------------------------------------------------------
+    // 6. Unity Engine & Camera Offsets (ESP WorldToScreen)
+    // --------------------------------------------------------------------------
+    namespace Engine {
+        constexpr uintptr_t Camera_get_main          = 0xA1671C8; // public static Camera get_main()
+        constexpr uintptr_t Camera_WorldToScreenPoint = 0xA165F00; // public Vector3 WorldToScreenPoint(Vector3)
+        constexpr uintptr_t Transform_get_position   = 0xA227EBC; // public Vector3 get_position()
+        constexpr uintptr_t Transform_set_position   = 0xA227FD0; // public void set_position(Vector3)
+    }
 }

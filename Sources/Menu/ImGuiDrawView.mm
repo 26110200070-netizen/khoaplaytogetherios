@@ -3,6 +3,7 @@
 #import <MetalKit/MetalKit.h>
 #import "ImGuiDrawView.h"
 #import "Menu.h"
+#import "Features/ESPFeatures.h"
 #import "IMGUI/imgui.h"
 #import "IMGUI/imgui_internal.h"
 #import "IMGUI/imgui_impl_metal.h"
@@ -254,6 +255,9 @@ static CGRect g_titleBarRect = CGRectMake(50, 40, 620, 45);
 
             ImGui_ImplMetal_NewFrame(renderPassDesc);
             ImGui::NewFrame();
+
+            // Render ESP overlays
+            ESPFeatures::RenderESP();
 
             // Render Menu
             if (g_menuOpen) {

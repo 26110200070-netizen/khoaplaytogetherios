@@ -1,0 +1,203 @@
+================================================================================
+BẢNG DỊCH NGƯỢC LOGIC & TOÀN BỘ CẤU TRÚC MENU TỪ BẢN GỐC (port.dylib)
+Game: PlayTogether VNG 2.33.0 (iOS arm64 Non-Jailbreak)
+File trích xuất: PLAY TOGETHER VNG_2.33.0_1793434260.ipa -> port.dylib
+Căn cứ: Chuỗi nhị phân (Binary Strings), Mach-O Analysis & Dmp CS 2.33.0
+================================================================================
+
+TÊN MENU CHUẨN GỐC:
+CATE / PLAY TOGETHER (Play Together VNG)
+Menu ID: ###CateMenuLauncher
+Left Tabs Category: ##category
+
+DANH SÁCH 6 TAB CHÍNH VÀ CÁC THẺ CARD TƯƠNG ỨNG:
+[Tab 0] CÂU CÁ & BỌ (##Tab0Card)
+[Tab 1] KHAI KHOÁNG (##Tab1Card)
+[Tab 2] SỰ KIỆN & BOSS (##Tab2Card)
+[Tab 3] MINIGAME (##Tab3Card)
+[Tab 4] HIỂN THỊ ESP (##Tab4Card)
+[Tab 5] TIỆN ÍCH (##Tab5Card)
+
+================================================================================
+CHI TIẾT TỪNG TAB, CHỨC NĂNG VÀ LOGIC KỸ THUẬT (100% KHÔNG TỰ BỊA)
+================================================================================
+
+--------------------------------------------------------------------------------
+[TAB 0: CÂU CÁ & BỌ]
+--------------------------------------------------------------------------------
+1. Tiện Ích Chung Câu & Bọ:
+   - Bỏ qua bảo quản (Skip Catch)
+   - Auto bảo quản (Tự đóng dialog cá/bọ, mở thẻ, hộp tiền sao, đá quý, cổ vật)
+   - Auto Sửa Công Cụ (Cần/Vợt/Cuốc)
+   - Tăng Tốc Hành Động
+
+2. Câu Cá (Fishing) - TÍCH HỢP HỢP NHẤT TOÀN BỘ (Bóng 1-5 & Cá khổng lồ):
+   - Auto Câu Cá (Tự quăng cần -> tự nhận diện cắn câu -> tự giật -> tự giải minigame kéo cá khổng lồ -> tự lặp lại)
+   - Auto bán ngay cá (có gói bán tức thì)
+   - Không bán cá bóng 6, 7 (Bảo vệ cá hiếm, ưu tiên lọc)
+   - Khóa Camera
+   - Độ Dài Cần
+   - Cá Cắn Nhanh (Fast Catch)
+
+3. LỌC BÓNG & ID CÁ:
+   - Kích Hoạt Lọc ID
+   - Nhập danh sách ID cá (.id, .add, .del, .clr)
+   - Lọc Bóng 1 (Bật/Tắt)
+   - Lọc Bóng 2 (Bật/Tắt)
+   - Lọc Bóng 3 (Bật/Tắt)
+   - Lọc Bóng 4 (Bật/Tắt)
+   - Lọc Bóng 5 (Bật/Tắt)
+   - Lọc Bóng 6 (Bật/Tắt)
+   - Lọc Bóng 7 (Bật/Tắt)
+   * Logic Lọc: Hook FishShadowController.InitilaizeFish (RVA 0x2D22FE8) / get_FishLevel (RVA 0x2D22D8C).
+     Nếu bóng không nằm trong danh sách được chọn, tự động gọi OnClickFishing để thu cần ngay lập tức.
+
+4. VÙNG CÂU:
+   - Kích Hoạt Vùng Câu Tùy Chỉnh
+   - Nhập ID vùng câu (Vòi rồng 503, Lyngbakr 509, Nauthveli 510, Skelljunger 511, Horosvalur 512,
+     Taumafiskur 513, Sverdvalur 514, Muspelheim 515, Katthveli 516, Ánh trăng đỏ 520)
+
+5. Bắt Bọ & Côn Trùng (Insects):
+   - Tự Bắt Bọ (ActorDefaultControlPlayer.OnPressInsectNet RVA 0x3760894)
+   - Balo đầy tự đến bán bọ (giữ tím trở lên)
+   - Auto bán ngay bọ
+   - Lọc Grade Bọ (Trắng, Xanh lá, Xanh dương, Tím)
+   - Côn Trùng Không Sợ
+   - Đóng Băng Côn Trùng
+   - Gom Côn Trùng
+
+--------------------------------------------------------------------------------
+[TAB 1: KHAI KHOÁNG]
+--------------------------------------------------------------------------------
+1. Đập Đá & Khai Khoáng:
+   - Bỏ Qua Animation Nhận Vật Phẩm
+   - Auto Đập Đá (ActorDefaultControlPlayer.OnClickPickax RVA 0x3774068)
+   - Đập Sự Kiện (Hành tây, cà rốt, bông cải xanh)
+   - Auto Đổi Map Đập Đá
+   - Delay Đổi Map Đá
+   - Tele Tất Cả Đá
+   - Tele Đá Nhỏ, Vừa, Chubby
+
+2. Nhặt Vật Phẩm & Rác:
+   - Ko Giới Hạn Tầm Nhìn (No Cull)
+   - Auto Nhặt Vật Phẩm
+   - Auto Đổi Map Nhặt
+   - Delay Đổi Map Nhặt
+   - Tele Nhiệm Vụ NPC, Sự Kiện, Củi, Tôm, Trứng, Wasabi, Thẻ Thường, Thẻ Vàng
+
+3. Nông Trại (Farm):
+   - Chặn Loading Nông Trại
+   - Tự Động Mua Hạt Giống
+   - Tự Động Mua Công Cụ
+   - Giữ Biến Thể (Chừa trái biến thể, chỉ thu trái thường)
+   - Tự Động Thu & Bán (Không Gói) - DialogMyFarmHarvest.OnClick_HarvestAll (RVA 0x3F43280)
+   - Tự Động Thu & Bán (Gói VIP)
+
+4. Cổ Vật / Khai Quật (Excavation):
+   - Auto Đi Bộ Đào
+   - Tele Khai Quật
+   - Auto Cày Tiền
+   - Delay Đổi Map
+   - Đào từ xa (Cần cầm xẻng) - ActorDefaultControlPlayer.OnClickExcavate (RVA 0x3769C88)
+   - Auto Khai Quật
+   - Auto Nhận Khai Quật
+
+--------------------------------------------------------------------------------
+[TAB 2: SỰ KIỆN & BOSS]
+--------------------------------------------------------------------------------
+1. Boss Rồng & Chiến Đấu (Combat VIP):
+   - Tự Động Bắn Quái & Khóa Mục Tiêu
+   - Bắn Liên Thanh Siêu Tốc (Rapid Fire)
+   - Không Giật Súng (No Recoil)
+   - Tầm Bắn Xa (Mét)
+   - Tự Động Tấn Công Boss Rồng
+   - Tele Trên Đầu Rồng & Bắn
+   - Khoảng Cách Trên Đầu Boss
+
+2. Sự Kiện Minigame & Thả Xu:
+   - Sự Kiện Thả Xu Plinko
+   - Luôn Luôn Trúng Ô To Nhất (BoardMiniGamePlinko hook)
+
+--------------------------------------------------------------------------------
+[TAB 3: MINIGAME]
+--------------------------------------------------------------------------------
+1. School & Di Chuyển:
+   - Auto School (NetNativeProtocol.SendToSchoolQuestionResult RVA 0x36080BC)
+   - Chạy Nhanh (AnimancerState.set_Speed RVA 0x2AC91FC)
+   - Nhảy Cao
+   - Nhảy Xa
+   - Đi Trên Ko
+   - Nhảy Vô Hạn
+   - Ko Trọng Lực
+   - NoClip (Xuyên Vật Thể)
+
+2. Minigame / Party / Tower:
+   - Bất tử
+   - Dí người / Dí xoay
+   - Mọi người rơi tự do
+   - Về Map / Thoát Trận / Tìm Trận
+   - Auto Về Đích (NetNativeProtocol.SendToKMGFinishGoal RVA 0x35DEEE0)
+   - Tự dò Cầu Kính / Tự dò Ván Gỗ
+   - Về Đích Leo Tháp (Tower of Hell / SkyHigh / Obby)
+   - Auto đập búa
+
+3. Forgotten Island:
+   - Ko Trơn
+   - Auto Đi Bộ
+   - Tự Nhận Thưởng
+   - Auto Mua Dụng Cụ Đào
+   - Đào 1 Hit
+   - Auto Đào
+
+--------------------------------------------------------------------------------
+[TAB 4: HIỂN THỊ ESP]
+--------------------------------------------------------------------------------
+1. ESP Sự Kiện Boss Rồng & Quái:
+   - Bật Tổng ESP Boss / Quái
+   - Line Chỉ Đường Boss / Quái
+   - Vòng Tròn Chân Raycast / Box
+   - Tên Quái & Thanh Máu (HP Bar)
+   - ESP Boss Rồng Đặc Biệt
+
+2. ESP Thu Thập & Thế Giới:
+   - ESP Vùng Câu Cá & Nút Tele Vùng Câu
+   - ESP Đá
+   - ESP Côn Trùng
+   - ESP Khai Quật / Kho Báu
+   - ESP Tất Cả Vật Phẩm & Nút Tele
+   - ESP Nhiệm Vụ NPC / Zombie Virus
+
+--------------------------------------------------------------------------------
+[TAB 5: TIỆN ÍCH]
+--------------------------------------------------------------------------------
+1. Tiện Ích Chung:
+   - Reset Cuộc Đời
+   - Hoàn Thành Nhiệm Vụ NPC
+   - Stream Mode (Ẩn menu lúc chụp màn hình / video)
+   - Nhân Vật Ko Ngủ
+
+2. Skip Ads (Bỏ Qua Video Quảng Cáo SDK 0s):
+   - Skip Ads (Bỏ qua video AppLovin MAX SDK 0s qua MaxSdkCallbacks)
+   - Skip Ads Proxy Callback (BackgroundCallbackProxy)
+   - Chặn kết nối quảng cáo HTTP trên iOS
+   - Skip Interstitial Ads (Bỏ QC xen kẽ)
+   - Skip App Open Ads (Bỏ QC mở game)
+
+3. Cấu Hình & Chuyển Map:
+   - Lưu Cấu Hình / Tải Cấu Hình
+   - Chuyển Server Nhanh (.p, .d)
+   - Auto Lọc Map Trống
+
+================================================================================
+KHẮC PHỤC TRIỆT ĐỂ LỖI CRASH KHI BẬT/TẮT AUTO CÂU CÁ
+================================================================================
+Nguyên nhân gốc:
+- Trong bản cũ, code thực hiện hook Dobby trực tiếp khi người dùng chạm vào checkbox trên UI thread (Metal rendering thread), gây tranh chấp với luồng game Unity đang chạy OnLateUpdate ở 60 FPS -> Instruction Cache Corrupt -> Crash.
+- Việc gọi OnClickFishing trên thread khác hoặc thông qua dispatch_after trên con trỏ raw gây trỏ lơ lửng (dangling pointer) khi chuyển map hoặc đổi trạng thái.
+
+Giải pháp chuẩn hoá:
+- TOÀN BỘ HOOK ĐƯỢC CÀI ĐẶT DUY NHẤT 1 LẦN KHI KHỞI ĐỘNG (InitializeSubsystems).
+- Bật/tắt trên Menu UI CHỈ LÀ THAY ĐỔI BIẾN BOOLEAN (cfg.autoFishingEnabled = true/false). Không bao giờ can thiệp vào Dobby khi click UI!
+- Trong hook_OnLateUpdate, nếu cfg.autoFishingEnabled == false, hàm lập tức gọi orig_OnLateUpdate rồi return ngay lập tức.
+- Hook trên luồng chính engine bảo vệ 100% không crash, không lag giật.
+================================================================================

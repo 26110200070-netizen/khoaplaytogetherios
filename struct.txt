@@ -1,0 +1,255 @@
+================================================================================
+KHOA PLAYTOGETHER - REVERSE ENGINEERING & TECHNICAL STRUCT SPECIFICATION
+Target Game: PlayTogether (VNG)
+Game Version: 2.33.0
+Platform: iOS arm64 (Non-Jailbreak / Sideload / Esign)
+Engine: Unity 2021.3 / Il2Cpp
+Primary Module: UnityFramework.framework/UnityFramework
+================================================================================
+
+[1. GAME INFORMATION]
+- Game Title: Play Together
+- Package / Bundle ID: com.vng.playtogether
+- Version: 2.33.0
+- Binary Target: UnityFramework (Mach-O 64-bit arm64 dynamic library)
+- Runtime Engine: Unity il2cpp
+- Memory Protection: CodeStage Anti-Cheat Toolkit (ACTk), G-Presto, ObscuredTypes
+- Verification Status: VERIFIED
+
+--------------------------------------------------------------------------------
+[2. CLASS & METHOD SPECIFICATIONS]
+
+Class: ActorDefaultControlPlayer
+- Namespace: (global)
+- Base Class: ActorDefaultControl
+- Description: Điều khiển nhân vật chính của người chơi trên thiết bị local.
+- Fields:
+  * _actorCharacter (0x10) : ActorCharacter [VERIFIED]
+  * _isFishing (0x48) : bool [VERIFIED]
+- Methods:
+  * OnClickFishing()
+    - RVA: 0x376B0E0 | VA: 0x1158C70E0
+    - Signature: public override void OnClickFishing()
+    - Chức năng: Thao tác bấm nút câu cá (quăng cần, giật cá, giật choáng trong minigame).
+    - Status: VERIFIED
+  * StartFishing()
+    - RVA: 0x376B824 | VA: 0x1158C7824
+    - Signature: public bool StartFishing()
+    - Chức năng: Bắt đầu quăng cần câu xuống nước.
+    - Status: VERIFIED
+  * UpdateFishingState(ActorDefaultControl.eFishingState fishingState)
+    - RVA: 0x376C860 | VA: 0x1158C8860
+    - Signature: public override bool UpdateFishingState(ActorDefaultControl.eFishingState fishingState)
+    - Chức năng: Xử lý chuyển đổi trạng thái câu cá của player.
+    - Status: VERIFIED
+  * HitResult(FishingSystem.eHitState hitState)
+    - RVA: 0x3770764 | VA: 0x1158CC764
+    - Signature: private void HitResult(FishingSystem.eHitState hitState)
+    - Status: VERIFIED
+  * CatchResult(bool success, uint rewardItemId, int size, FishExtraData options)
+    - RVA: 0x3770928 | VA: 0x1158CC928
+    - Signature: private void CatchResult(bool success, uint rewardItemId, int size, FishExtraData options)
+    - Status: VERIFIED
+
+Class: FishingFloatController
+- Namespace: (global)
+- Base Class: UnityEngine.MonoBehaviour
+- Description: Bộ điều khiển phao câu cá trên mặt nước, theo dõi cá cắn, kéo dây và choáng.
+- Fields:
+  * _actorControl (0xA8) : ActorDefaultControl [VERIFIED]
+  * _state (0xB0) : FishingFloatController.FloatState [VERIFIED]
+  * FloatSize (0xC8) : float [VERIFIED]
+  * HitEfxID (0x104) : uint [VERIFIED]
+  * BigFishDragTime (0x204) : float [VERIFIED]
+- Methods:
+  * ChangeState(FishingFloatController.FloatState state)
+    - RVA: 0x2D275C4 | VA: 0x114E835C4
+    - Signature: public void ChangeState(FishingFloatController.FloatState state)
+    - Chức năng: Cập nhật trạng thái phao cá cắn (!), giãy kéo dây, và choáng.
+    - Status: VERIFIED
+  * BigFishStunHit()
+    - RVA: 0x2D2BAF8 | VA: 0x114E87AF8
+    - Signature: public void BigFishStunHit()
+    - Chức năng: Gây sát thương làm giảm HP cá khổng lồ khi bị choáng.
+    - Status: VERIFIED
+
+Class: DialogFishingGetItem
+- Namespace: (global)
+- Base Class: DialogUnit
+- Description: Giao diện hiển thị phần thưởng cá câu được (Bảo quản, Bán, Thả).
+- Fields:
+  * Self (static, 0x0) : DialogFishingGetItem [VERIFIED]
+  * FishInfo (0x120) : GameObject [VERIFIED]
+  * BoxInfo (0x128) : GameObject [VERIFIED]
+  * OKButton (0x1D0) : UIButton [VERIFIED]
+- Methods:
+  * DialogShow()
+    - RVA: 0x3E521D0 | VA: 0x115FAE1D0
+    - Signature: public override void DialogShow()
+    - Status: VERIFIED
+  * OnClick_ButtonClose()
+    - RVA: 0x3E521EC | VA: 0x115FAE1EC
+    - Signature: private void OnClick_ButtonClose()
+    - Chức năng: Bấm nút "Bảo quản" (Keep/Store) cất cá vào thùng.
+    - Status: VERIFIED
+  * DialogHide(bool isDelete)
+    - RVA: 0x3E521D8 | VA: 0x115FAE1D8
+    - Status: VERIFIED
+  * DialogDelete()
+    - RVA: 0x3E521E0 | VA: 0x115FAE1E0
+    - Status: VERIFIED
+
+Class: DialogRewardPopup
+- Namespace: (global)
+- Base Class: DialogUnit, IDialogCommonParam
+- Description: Giao diện nhận quà hệ thống / nhiệm vụ / sự kiện.
+- Fields:
+  * Self (static, 0x0) : DialogRewardPopup [VERIFIED]
+  * button_Close (0x130) : UIButton [VERIFIED]
+  * button_Yes (0x140) : PT_ColorButton [VERIFIED]
+- Methods:
+  * DialogShow()
+    - RVA: 0x3A2082C | VA: 0x115B7C82C
+    - Status: VERIFIED
+  * OnClickYes()
+    - RVA: 0x3A226F4 | VA: 0x115B7E6F4
+    - Signature: private void OnClickYes()
+    - Chức năng: Nhận quà và đóng popup.
+    - Status: VERIFIED
+  * DialogHide(bool isDelete)
+    - RVA: 0x3A20834 | VA: 0x115B7C834
+    - Status: VERIFIED
+
+Class: DialogResultGetItemView
+- Namespace: (global)
+- Base Class: DialogUnit
+- Description: Giao diện mở hộp thẻ, Gacha box, gói quà bốc thăm.
+- Methods:
+  * DialogShow()
+    - RVA: 0x2B75434 | VA: 0x114CD1434
+    - Status: VERIFIED
+  * DialogCloseFromBack()
+    - RVA: 0x2B75B00 | VA: 0x114CD1B00
+    - Status: VERIFIED
+  * DialogDelete()
+    - RVA: 0x2B755F0 | VA: 0x114CD15F0
+    - Status: VERIFIED
+
+Class: SystemHelper
+- Namespace: (global)
+- Base Class: (static class)
+- Methods:
+  * get_Layer()
+    - RVA: 0x342121C | VA: 0x11557D21C
+    - Signature: public static LayerSystem get_Layer()
+    - Status: VERIFIED
+  * get_Actor()
+    - RVA: 0x342166C | VA: 0x11557D66C
+    - Signature: public static ActorSystem get_Actor()
+    - Status: VERIFIED
+  * get_Map()
+    - RVA: 0x3421558 | VA: 0x11557D558
+    - Signature: public static MapSystem get_Map()
+    - Status: VERIFIED
+
+Class: LayerSystem
+- Namespace: (global)
+- Base Class: PT_SystemBase
+- Methods:
+  * ConnectToZoneMove(uint targetMapId, eWhereFromType fromType, string serverName, bool useIris, bool useAdabt)
+    - RVA: 0x2E9DBB0 | VA: 0x114FF9BB0
+    - Signature: public void ConnectToZoneMove(...)
+    - Chức năng: Chuyển phân vùng bản đồ đến map mục tiêu.
+    - Status: VERIFIED
+
+Class: AntiCheatListener
+- Namespace: (global)
+- Base Class: UnityEngine.MonoBehaviour
+- Description: Lắng nghe và gửi dữ liệu phát hiện gian lận về máy chủ Haegin.
+- Methods:
+  * OnOtherCheatingDetected(AntiCheatListener.HType otherNo, string ment)
+    - RVA: 0x3063C94 | VA: 0x1151BFC94
+    - Hook: RET (chặn gửi mã vi phạm về server)
+    - Status: VERIFIED
+  * OnSpeedHackDetected()
+    - RVA: 0x3063A7C | VA: 0x1151BFA7C
+    - Hook: RET
+    - Status: VERIFIED
+  * OnSpeedHackDetectedGpresto()
+    - RVA: 0x3063B04 | VA: 0x1151BFB04
+    - Hook: RET
+    - Status: VERIFIED
+  * OnTimeCheatingDetected()
+    - RVA: 0x3063B98 | VA: 0x1151BFB98
+    - Hook: RET
+    - Status: VERIFIED
+  * OnObscuredTypeCheatingDetected()
+    - RVA: 0x3063BA0 | VA: 0x1151BFBA0
+    - Hook: RET
+    - Status: VERIFIED
+  * OnTableCheatingDetected(string ment)
+    - RVA: 0x3063C28 | VA: 0x1151BFC28
+    - Hook: RET
+    - Status: VERIFIED
+  * OnAnimationSpeedCheatDetect(AnimancerState state)
+    - RVA: 0x3063D34 | VA: 0x1151BFD34
+    - Hook: RET
+    - Status: VERIFIED
+  * get_IsCheating()
+    - RVA: 0x306397C | VA: 0x1151BF97C
+    - Hook: return false
+    - Status: VERIFIED
+  * CheckDetect(AntiCheatListener.HType type)
+    - RVA: 0x30639D0 | VA: 0x1151BF9D0
+    - Hook: return false
+    - Status: VERIFIED
+
+--------------------------------------------------------------------------------
+[3. MAP INFORMATION]
+Enum: PlayTogether.Table.Map_Kind
+
+| STT | Tên Bản Đồ (Yêu Cầu)  | Enum Identifier | Map ID | Trạng Thái Xác Minh | Mô Tả & Vị Trí Nhận Diện |
+|-----|------------------------|-----------------|--------|---------------------|---------------------------|
+| 1   | Khu nghỉ dưỡng         | ResortIsland    | 1301   | VERIFIED            | Đảo nhiệt đới nghỉ dưỡng, bãi biển câu cá |
+| 2   | Cắm trại               | CampingZone     | 1201   | VERIFIED            | Khu dã ngoại, thác nước, suối câu |
+| 3   | Plaza                  | Square          | 1001   | VERIFIED            | Quảng trường trung tâm, hồ Plaza |
+| 4   | Cống ngầm              | Sewer           | 1401   | VERIFIED            | Mê cung cống ngầm dưới lòng đất |
+| 5   | Down town              | DownTown        | 1502   | VERIFIED            | Trung tâm tài chính thương mại |
+
+--------------------------------------------------------------------------------
+[4. FISHING SYSTEM SPECIFICATION]
+
+FloatState Enum (FishingFloatController.FloatState):
+- None = 0
+- Begin = 1
+- Casting = 2
+- OnWater = 3
+- Idle = 4
+- Touch = 5 [Cá rỉa mồi]
+- Hit = 6 [Cá cắn câu - Dấu chấm than (!)] -> Giật cần ngay
+- Fight = 7 [Đang kéo cá]
+- SuccessLift = 8 [Kéo cá lên bờ thành công] -> Mở dialog nhận cá
+- FailLift = 9 [Kéo hụt]
+- Fail = 10 [Thất bại]
+- MissLift = 11 [Trượt]
+- BigFish_Begin = 12 [Bắt đầu minigame cá to]
+- BigFish_Pumpin = 13 [Gồng cần]
+- BigFish_DragReady = 14 [Chuẩn bị cá bơi]
+- BigFish_Drag = 15 [Cá quái vật giãy/bơi kéo căng dây] -> Kéo lại dây
+- BigFish_Tug = 16 [Giật dây]
+- BigFish_TugMiss = 17 [Giật hụt]
+- BigFish_StunBegin = 18 [Cá bắt đầu choáng]
+- BigFish_Stun = 19 [Cá bị choáng] -> Giật liên tục (Stun Rapid Tap)
+- BigFish_StunRecovery = 20 [Cá hồi phục sau choáng]
+- BigFish_Fight = 21 [Giao tranh tiếp]
+- BigFish_Appear = 22 [Cá nổi lên]
+- BigFish_Catch = 23 [Bắt được cá khổng lồ]
+
+Logic Auto Câu Cá:
+1. Thông Thường (Bóng 1-5):
+   Quăng cần -> State 3/4 -> Chờ State 6 (Hit !) -> Gọi OnClickFishing() -> Chờ State 8 (SuccessLift) -> DialogFishingGetItem mở -> Sau 0.3s Auto Bảo quản cất cá -> Chờ 1.2s -> StartFishing() quăng cần lại.
+2. Minigame Cá Khổng Lồ / Quái Vật:
+   Chuyển State 12/13 -> Khi cá bơi/giãy (State 15 BigFish_Drag): Kéo lại dây -> Khi cá choáng (State 19 BigFish_Stun): Bấm giật cần liên tục (80ms nhịp) gọi BigFishStunHit() và OnClickFishing() để dồn sát thương -> Khi bắt được (State 23 BigFish_Catch): Nhận cá, bảo quản, tự động quăng cần lại.
+
+Status: VERIFIED.
+================================================================================

@@ -1,0 +1,9 @@
+Package: com.khoa.playtogether
+Name: KhoaPlaytogether
+Depends: mobilesubstrate
+Version: 1.0.0
+Architecture: iphoneos-arm
+Description: Modern ImGui Mod Menu for PlayTogether iOS (Non-Jailbreak)
+Maintainer: Khoa
+Author: Khoa
+Section: Tweaks

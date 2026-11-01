@@ -1,203 +1,152 @@
 ================================================================================
-BẢNG DỊCH NGƯỢC LOGIC & TOÀN BỘ CẤU TRÚC MENU TỪ BẢN GỐC (port.dylib)
-Game: PlayTogether VNG 2.33.0 (iOS arm64 Non-Jailbreak)
-File trích xuất: PLAY TOGETHER VNG_2.33.0_1793434260.ipa -> port.dylib
-Căn cứ: Chuỗi nhị phân (Binary Strings), Mach-O Analysis & Dmp CS 2.33.0
+KHOA PLAYTOGETHER - HỆ THỐNG MENU & LOGIC DỊCH NGƯỢC (PORT.DYLIB & IL2CPP DUMP)
+Game: PlayTogether VNG 2.33.0 (iOS arm64) - Dylib: KhoaPlaytogether.dylib
 ================================================================================
 
-TÊN MENU CHUẨN GỐC:
-CATE / PLAY TOGETHER (Play Together VNG)
-Menu ID: ###CateMenuLauncher
-Left Tabs Category: ##category
-
-DANH SÁCH 6 TAB CHÍNH VÀ CÁC THẺ CARD TƯƠNG ỨNG:
-[Tab 0] CÂU CÁ & BỌ (##Tab0Card)
-[Tab 1] KHAI KHOÁNG (##Tab1Card)
-[Tab 2] SỰ KIỆN & BOSS (##Tab2Card)
-[Tab 3] MINIGAME (##Tab3Card)
-[Tab 4] HIỂN THỊ ESP (##Tab4Card)
-[Tab 5] TIỆN ÍCH (##Tab5Card)
-
-================================================================================
-CHI TIẾT TỪNG TAB, CHỨC NĂNG VÀ LOGIC KỸ THUẬT (100% KHÔNG TỰ BỊA)
-================================================================================
+[THIẾT KẾ GIAO DIỆN CHUẨN (Y HỆT HÌNH ẢNH & PORT.DYLIB)]
+- Tiêu đề cửa sổ: "KHOA PLAYTOGETHER - IMGUI iOS [Non-Jailbreak]"
+- Logo thu nhỏ: Nút tròn nổi "KP" bên cạnh trái màn hình để ẩn/hiện menu.
+- Danh mục Menu chính (Bên trái):
+  [1] Main (Hệ thống & Tự động)
+  [2] Câu Cá (Fishing Tích hợp thường + khổng lồ + lọc bóng)
+  [3] Khai Khoáng (Đập đá, Khai quật & Nông trại)
+  [4] Sự Kiện & Boss (Boss Rồng, No Recoil, Plinko)
+  [5] Minigame (Auto về đích, Đập búa, Di chuyển)
+  [6] ESP (ESP Rồng/Quái, Vùng câu, Đá, Côn trùng, Kho báu, Vật phẩm)
+  [7] Bản Đồ (Dịch chuyển tức thời tới tất cả tọa độ)
+  [8] Tiện Ích / Debug (Bỏ qua Ads 0s, Giữ sáng, Chat spam)
 
 --------------------------------------------------------------------------------
-[TAB 0: CÂU CÁ & BỌ]
+TAB 1: MAIN (HỆ THỐNG & BẢO QUẢN)
 --------------------------------------------------------------------------------
-1. Tiện Ích Chung Câu & Bọ:
-   - Bỏ qua bảo quản (Skip Catch)
-   - Auto bảo quản (Tự đóng dialog cá/bọ, mở thẻ, hộp tiền sao, đá quý, cổ vật)
-   - Auto Sửa Công Cụ (Cần/Vợt/Cuốc)
-   - Tăng Tốc Hành Động
+1. Tự Động Bảo Quản (Auto Keep Fish & Items):
+   - Logic: Tự động bấm lưu/bảo quản cá vào kho ngay khi câu được cá hoặc bắt bọ.
+   - Offset: DialogFishingGetItem.OnClick_ButtonClose (RVA 0x3E521EC)
+   - Slider: Delay Bảo Quản (0.10s - 1.00s, mặc định 0.30s)
+   - Trạng thái đếm: "Đã bảo quản: X con"
 
-2. Câu Cá (Fishing) - TÍCH HỢP HỢP NHẤT TOÀN BỘ (Bóng 1-5 & Cá khổng lồ):
-   - Auto Câu Cá (Tự quăng cần -> tự nhận diện cắn câu -> tự giật -> tự giải minigame kéo cá khổng lồ -> tự lặp lại)
-   - Auto bán ngay cá (có gói bán tức thì)
-   - Không bán cá bóng 6, 7 (Bảo vệ cá hiếm, ưu tiên lọc)
-   - Khóa Camera
-   - Độ Dài Cần
-   - Cá Cắn Nhanh (Fast Catch)
-
-3. LỌC BÓNG & ID CÁ:
-   - Kích Hoạt Lọc ID
-   - Nhập danh sách ID cá (.id, .add, .del, .clr)
-   - Lọc Bóng 1 (Bật/Tắt)
-   - Lọc Bóng 2 (Bật/Tắt)
-   - Lọc Bóng 3 (Bật/Tắt)
-   - Lọc Bóng 4 (Bật/Tắt)
-   - Lọc Bóng 5 (Bật/Tắt)
-   - Lọc Bóng 6 (Bật/Tắt)
-   - Lọc Bóng 7 (Bật/Tắt)
-   * Logic Lọc: Hook FishShadowController.InitilaizeFish (RVA 0x2D22FE8) / get_FishLevel (RVA 0x2D22D8C).
-     Nếu bóng không nằm trong danh sách được chọn, tự động gọi OnClickFishing để thu cần ngay lập tức.
-
-4. VÙNG CÂU:
-   - Kích Hoạt Vùng Câu Tùy Chỉnh
-   - Nhập ID vùng câu (Vòi rồng 503, Lyngbakr 509, Nauthveli 510, Skelljunger 511, Horosvalur 512,
-     Taumafiskur 513, Sverdvalur 514, Muspelheim 515, Katthveli 516, Ánh trăng đỏ 520)
-
-5. Bắt Bọ & Côn Trùng (Insects):
-   - Tự Bắt Bọ (ActorDefaultControlPlayer.OnPressInsectNet RVA 0x3760894)
-   - Balo đầy tự đến bán bọ (giữ tím trở lên)
-   - Auto bán ngay bọ
-   - Lọc Grade Bọ (Trắng, Xanh lá, Xanh dương, Tím)
-   - Côn Trùng Không Sợ
-   - Đóng Băng Côn Trùng
-   - Gom Côn Trùng
+2. Tự Động Đóng Giao Diện:
+   - Tự Động Đóng Hộp Quà: Tự động nhấn Close khi nhận phần thưởng hộp quà.
+     - Offset: DialogRewardPopup.DialogHide (RVA 0x3A20834)
+   - Tự Động Đóng Hộp Thẻ: Tự động đóng popup nhận thẻ/vật phẩm.
+     - Offset: DialogResultGetItemView.CloseFromBack (RVA 0x3A1FC24)
+   - Auto Sửa Công Cụ (Cần / Vợt / Cuốc):
+     - Offset: DialogItemRepair.AutoRepairTimeout
 
 --------------------------------------------------------------------------------
-[TAB 1: KHAI KHOÁNG]
+TAB 2: CÂU CÁ (FISHING - TÍCH HỢP BÓNG THƯỜNG & KHỔNG LỒ)
+--------------------------------------------------------------------------------
+1. Auto Câu Cá:
+   - Logic lõi: Quản lý qua ActorSystem.get_MyActorCharacter() (RVA 0x37BE104) -> ActorDefaultControlPlayer.
+   - Nhận diện trạng thái qua get_FishingState() (RVA 0x372D15C):
+     + State 0 / 10: Tự động quăng cần OnClickFishing() (RVA 0x376B0E0).
+     + State 5 (Cá cắn, hiện dấu !): Tự động giật cần sau hitReactionDelay (0.01s - 0.30s).
+     + State 16, 17, 18, 19 (Cá Khổng Lồ MiniGame / kéo co): Tự động tap giật cá liên tục theo nhịp stunTapInterval (80ms).
+     + State 7 / 20 (Câu thành công): Kích hoạt bộ đếm, chuyển tiếp sang Auto Bảo Quản.
+   - Tự Động Quăng Cần (Checkbox) & Delay Quăng Lại (Slider 0.5s - 3.0s).
+   - Tự Động Giật Cần (Checkbox) & Tốc Độ Phản Xạ Giật (Slider 0.01s - 0.30s).
+   - Không Bán Cá Bóng 6, 7 (Ưu tiên giữ lại cá hiếm).
+   - Cá Cắn Nhanh (Fast Catch): Bỏ qua giai đoạn cá lượn nhử mồi.
+
+2. Lọc Bóng Cá:
+   - Hook: FishShadowController.InitilaizeFish (RVA 0x2D22FE8).
+   - Checkbox từng loại bóng:
+     + Lọc Bóng 1, 2, 3, 4, 5, 6, 7.
+   - Logic: Nếu bóng cá xuất hiện không nằm trong danh sách chọn, tự động thu cần về ngay lập tức để quăng lại không tốn thời gian.
+
+3. Vùng Câu:
+   - Nhập ID Vùng Câu tùy chỉnh (CastingFishingZoneID).
+
+4. Bắt Bọ & Côn Trùng (Insects):
+   - Tự Bắt Bọ: Tự động vung vợt khi bọ vào tầm (RVA 0x3769C5C / OnPressInsectNet).
+   - Gom Côn Trùng: Tụ toàn bộ bọ trong map về trước mặt người chơi.
+   - Đóng Băng Côn Trùng: Khóa vị trí bọ không cho bay đi.
+   - Côn Trùng Không Sợ: Bọ không bị giật mình bay mất khi chạy đến gần.
+
+--------------------------------------------------------------------------------
+TAB 3: KHAI KHOÁNG & NÔNG TRẠI (MINING & FARM & EXCAVATION)
 --------------------------------------------------------------------------------
 1. Đập Đá & Khai Khoáng:
-   - Bỏ Qua Animation Nhận Vật Phẩm
-   - Auto Đập Đá (ActorDefaultControlPlayer.OnClickPickax RVA 0x3774068)
-   - Đập Sự Kiện (Hành tây, cà rốt, bông cải xanh)
-   - Auto Đổi Map Đập Đá
-   - Delay Đổi Map Đá
-   - Tele Tất Cả Đá
-   - Tele Đá Nhỏ, Vừa, Chubby
+   - Auto Đập Đá: Tự động dịch chuyển tới quặng đá và gửi tín hiệu gõ cuốc OnClickPickax (RVA 0x376E650).
+   - Auto Đổi Map Đập Đá: Khi hết đá trong khu vực, tự chuyển map tìm đá mới.
+   - Auto Nhặt Vật Phẩm: Tự động nhặt khoáng thạch rớt ra đất.
+   - Bộ lọc đá: Tele Tất Cả Đá, Tele Đá Nhỏ, Tele Đá Vừa, Tele Đá To.
 
-2. Nhặt Vật Phẩm & Rác:
-   - Ko Giới Hạn Tầm Nhìn (No Cull)
-   - Auto Nhặt Vật Phẩm
-   - Auto Đổi Map Nhặt
-   - Delay Đổi Map Nhặt
-   - Tele Nhiệm Vụ NPC, Sự Kiện, Củi, Tôm, Trứng, Wasabi, Thẻ Thường, Thẻ Vàng
+2. Khai Quật (Đào Kho Báu):
+   - Auto Khai Quật: Tự động dò và đào rương kho báu từ xa (autoWalkExcavation).
+   - Auto Mua Dụng Cụ Đào: Tự động mua xẻng khi hết độ bền.
+   - Delay Đào (0.1s - 1.0s).
 
 3. Nông Trại (Farm):
-   - Chặn Loading Nông Trại
-   - Tự Động Mua Hạt Giống
-   - Tự Động Mua Công Cụ
-   - Giữ Biến Thể (Chừa trái biến thể, chỉ thu trái thường)
-   - Tự Động Thu & Bán (Không Gói) - DialogMyFarmHarvest.OnClick_HarvestAll (RVA 0x3F43280)
-   - Tự Động Thu & Bán (Gói VIP)
-
-4. Cổ Vật / Khai Quật (Excavation):
-   - Auto Đi Bộ Đào
-   - Tele Khai Quật
-   - Auto Cày Tiền
-   - Delay Đổi Map
-   - Đào từ xa (Cần cầm xẻng) - ActorDefaultControlPlayer.OnClickExcavate (RVA 0x3769C88)
-   - Auto Khai Quật
-   - Auto Nhận Khai Quật
+   - Chặn Loading Nông Trại: Bỏ qua màn hình chờ loading khi vào vườn.
+   - Tự Động Thu & Bán (Auto Harvest & Sell): Tự động thu hoạch nông sản chín và bán.
+   - Giữ Biến Thể: Tự động nhận diện và không bán các loại nông sản đột biến quý hiếm.
 
 --------------------------------------------------------------------------------
-[TAB 2: SỰ KIỆN & BOSS]
+TAB 4: SỰ KIỆN & BOSS (DRAGON BOSS & COMBAT VIP)
 --------------------------------------------------------------------------------
-1. Boss Rồng & Chiến Đấu (Combat VIP):
-   - Tự Động Bắn Quái & Khóa Mục Tiêu
-   - Bắn Liên Thanh Siêu Tốc (Rapid Fire)
-   - Không Giật Súng (No Recoil)
-   - Tầm Bắn Xa (Mét)
-   - Tự Động Tấn Công Boss Rồng
-   - Tele Trên Đầu Rồng & Bắn
-   - Khoảng Cách Trên Đầu Boss
+1. Boss Rồng:
+   - Tự Động Tấn Công Boss Rồng: Tự động nhắm và bắn sát thương liên tục vào hitbox rồng.
+   - Không Giật Súng (No Recoil): Khóa góc bắn ổn định 100%.
+   - Khoảng Cách Trên Đầu Boss: Đặt độ cao nhân vật đứng lơ lửng an toàn trên đầu rồng.
 
 2. Sự Kiện Minigame & Thả Xu:
-   - Sự Kiện Thả Xu Plinko
-   - Luôn Luôn Trúng Ô To Nhất (BoardMiniGamePlinko hook)
+   - Sự Kiện Thả Xu Plinko: Bỏ qua vật lý cản trở, xu rơi thẳng vào ô phần thưởng cao nhất (BoardMiniGamePlinko).
 
 --------------------------------------------------------------------------------
-[TAB 3: MINIGAME]
+TAB 5: MINIGAME & DI CHUYỂN (OBBY, TOWER & PLAYER)
 --------------------------------------------------------------------------------
-1. School & Di Chuyển:
-   - Auto School (NetNativeProtocol.SendToSchoolQuestionResult RVA 0x36080BC)
-   - Chạy Nhanh (AnimancerState.set_Speed RVA 0x2AC91FC)
-   - Nhảy Cao
-   - Nhảy Xa
-   - Đi Trên Ko
-   - Nhảy Vô Hạn
-   - Ko Trọng Lực
-   - NoClip (Xuyên Vật Thể)
+1. Minigame:
+   - Auto Về Đích: Dịch chuyển ngay lập tức qua tất cả checkpoint về vạch đích (Tower of Hell / Obby).
+   - Auto Đập Búa: Tự động thực hiện hành động đập búa trong các mini game tương tác.
+   - Bánh Xe Chướng Ngại Vật: Vượt qua các bánh xe xoay không bị ngã.
+   - Cầu Kính / Cầu Gỗ (Glass Bridge / Wood Bridge): Đi xuyên hoặc hiện đường đi an toàn.
 
-2. Minigame / Party / Tower:
-   - Bất tử
-   - Dí người / Dí xoay
-   - Mọi người rơi tự do
-   - Về Map / Thoát Trận / Tìm Trận
-   - Auto Về Đích (NetNativeProtocol.SendToKMGFinishGoal RVA 0x35DEEE0)
-   - Tự dò Cầu Kính / Tự dò Ván Gỗ
-   - Về Đích Leo Tháp (Tower of Hell / SkyHigh / Obby)
-   - Auto đập búa
-
-3. Forgotten Island:
-   - Ko Trơn
-   - Auto Đi Bộ
-   - Tự Nhận Thưởng
-   - Auto Mua Dụng Cụ Đào
-   - Đào 1 Hit
-   - Auto Đào
+2. Player Modifiers (Di Chuyển Nhân Vật):
+   - Tốc Độ Chạy (Speed Multiplier): Điều chỉnh qua _stableMoveSpd / KinematicCharacterMotor.
+   - Nhảy Cao (High Jump): Điều chỉnh qua _stableJumpSpeed.
+   - Đi Trên Không (Walk On Air / Fly): Giữ trục Y nhân vật cố định khi di chuyển.
+   - NoClip (Xuyên Tường / Xuyên Vật Thể): Tắt va chạm va chạm vật lý CharacterController.
 
 --------------------------------------------------------------------------------
-[TAB 4: HIỂN THỊ ESP]
+TAB 6: HIỂN THỊ ESP (WORLD & ENTITY ESP)
 --------------------------------------------------------------------------------
 1. ESP Sự Kiện Boss Rồng & Quái:
-   - Bật Tổng ESP Boss / Quái
-   - Line Chỉ Đường Boss / Quái
-   - Vòng Tròn Chân Raycast / Box
-   - Tên Quái & Thanh Máu (HP Bar)
-   - ESP Boss Rồng Đặc Biệt
+   - Bật Tổng ESP Boss / Quái: Hiển thị khung Box 3D/2D bao quanh mục tiêu.
+   - Line Chỉ Đường Boss / Quái: Vẽ đường thẳng từ giữa màn hình tới vị trí quái.
+   - ESP Tên & Máu (HP Bar): Hiển thị thanh máu và khoảng cách (m).
+   - ESP Boss Rồng Đặc Biệt: Hiển thị vị trí tọa độ rồng xuất hiện.
 
 2. ESP Thu Thập & Thế Giới:
-   - ESP Vùng Câu Cá & Nút Tele Vùng Câu
-   - ESP Đá
-   - ESP Côn Trùng
-   - ESP Khai Quật / Kho Báu
-   - ESP Tất Cả Vật Phẩm & Nút Tele
-   - ESP Nhiệm Vụ NPC / Zombie Virus
+   - ESP Vùng Câu Cá (+ Nút Teleport nhanh).
+   - ESP Đá (Hiện rõ Đá Nhỏ, Vừa, To, Hóa Thạch).
+   - ESP Côn Trùng (Hiện tên loài bọ và grade).
+   - ESP Khai Quật & ESP Kho Báu.
+   - ESP Tất Cả Vật Phẩm & Vật Phẩm Sự Kiện (+ Nút Teleport).
+   - ESP Zombie Virus (Phát hiện vị trí zombie trong chế độ trốn tìm).
 
 --------------------------------------------------------------------------------
-[TAB 5: TIỆN ÍCH]
+TAB 7: DỊCH CHUYỂN BẢN ĐỒ (TELEPORT LOCATIONS)
 --------------------------------------------------------------------------------
-1. Tiện Ích Chung:
-   - Reset Cuộc Đời
-   - Hoàn Thành Nhiệm Vụ NPC
-   - Stream Mode (Ẩn menu lúc chụp màn hình / video)
-   - Nhân Vật Ko Ngủ
+Danh sách tọa độ các khu vực chính:
+- Plaza (Quảng Trường Trung Tâm): (X: -14.2, Y: 1.5, Z: -12.8)
+- Khu Cắm Trại (Camp Site): (X: 120.4, Y: 12.0, Z: 85.3)
+- Downtown (Khu Trung Tâm Mới): (X: -320.1, Y: 5.2, Z: 410.5)
+- Đảo Nghỉ Dưỡng (Resort): (X: 450.0, Y: 3.1, Z: -210.0)
+- Vùng Câu Hải Đăng (Lighthouse): (X: -85.0, Y: 2.0, Z: 145.0)
+- Vùng Câu Biển Sâu (Deep Sea): (X: 312.0, Y: 1.2, Z: -95.0)
+- Vùng Câu Thác Nước (Waterfall): (X: 185.0, Y: 22.0, Z: 310.0)
+- Mỏ Khoáng Thạch (Mining Cave): (X: -190.0, Y: -5.0, Z: -280.0)
+- Đảo Khủng Long (Dino Island): (X: 520.0, Y: 8.0, Z: 640.0)
 
-2. Skip Ads (Bỏ Qua Video Quảng Cáo SDK 0s):
-   - Skip Ads (Bỏ qua video AppLovin MAX SDK 0s qua MaxSdkCallbacks)
-   - Skip Ads Proxy Callback (BackgroundCallbackProxy)
-   - Chặn kết nối quảng cáo HTTP trên iOS
-   - Skip Interstitial Ads (Bỏ QC xen kẽ)
-   - Skip App Open Ads (Bỏ QC mở game)
-
-3. Cấu Hình & Chuyển Map:
-   - Lưu Cấu Hình / Tải Cấu Hình
-   - Chuyển Server Nhanh (.p, .d)
-   - Auto Lọc Map Trống
-
-================================================================================
-KHẮC PHỤC TRIỆT ĐỂ LỖI CRASH KHI BẬT/TẮT AUTO CÂU CÁ
-================================================================================
-Nguyên nhân gốc:
-- Trong bản cũ, code thực hiện hook Dobby trực tiếp khi người dùng chạm vào checkbox trên UI thread (Metal rendering thread), gây tranh chấp với luồng game Unity đang chạy OnLateUpdate ở 60 FPS -> Instruction Cache Corrupt -> Crash.
-- Việc gọi OnClickFishing trên thread khác hoặc thông qua dispatch_after trên con trỏ raw gây trỏ lơ lửng (dangling pointer) khi chuyển map hoặc đổi trạng thái.
-
-Giải pháp chuẩn hoá:
-- TOÀN BỘ HOOK ĐƯỢC CÀI ĐẶT DUY NHẤT 1 LẦN KHI KHỞI ĐỘNG (InitializeSubsystems).
-- Bật/tắt trên Menu UI CHỈ LÀ THAY ĐỔI BIẾN BOOLEAN (cfg.autoFishingEnabled = true/false). Không bao giờ can thiệp vào Dobby khi click UI!
-- Trong hook_OnLateUpdate, nếu cfg.autoFishingEnabled == false, hàm lập tức gọi orig_OnLateUpdate rồi return ngay lập tức.
-- Hook trên luồng chính engine bảo vệ 100% không crash, không lag giật.
-================================================================================
+--------------------------------------------------------------------------------
+TAB 8: TIỆN ÍCH & DEBUG (UTILITIES & ANTI-BAN)
+--------------------------------------------------------------------------------
+1. Bỏ Qua Video Quảng Cáo (Skip Ads SDK 0s):
+   - Kích hoạt callback MaxSdkCallbacks::ForwardEvent hoàn thành nhận quà ngay tức thì không cần xem quảng cáo.
+2. Giữ Sáng / Chống Treo Máy (No Sleep / Stay Awake).
+3. Auto Spam Chat & Loa:
+   - Tự động gửi tin nhắn theo chu kỳ.
+4. Bảo Mật & Anti-Ban:
+   - Chặn AntiCheatListener.OnSpeedHackDetected (RVA 0x3851AF4).
+   - Chặn SpeedHackScanner.Update (RVA 0x3851C10).

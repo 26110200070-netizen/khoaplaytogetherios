@@ -2,12 +2,14 @@
 
 namespace Menu {
     enum class Tab {
-        FishingInsects = 0,
+        Main = 0,
+        Fishing,
         MiningFarm,
         BossCombat,
         Minigame,
         ESP,
-        Utilities
+        Map,
+        Debug
     };
 
     void Initialize();

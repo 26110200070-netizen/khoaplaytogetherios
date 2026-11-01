@@ -14,13 +14,14 @@
 namespace Menu {
 
     static bool s_isOpen = true;
-    static Tab s_currentTab = Tab::FishingInsects;
+    static Tab s_currentTab = Tab::Main;
 
     // Boss & Event state flags
     static bool s_bossAttack = false;
     static bool s_autoAim = false;
     static bool s_rapidFire = false;
     static bool s_noRecoil = false;
+    static float s_bossDistance = 15.0f;
     static bool s_plinko = false;
     static bool s_plinkoAlwaysMax = false;
 
@@ -29,23 +30,13 @@ namespace Menu {
     static bool s_woodBridge = false;
     static bool s_autoHammer = false;
 
-    // ESP state flags
-    static bool s_espFishing = false;
-    static bool s_espRocks = false;
-    static bool s_espInsects = false;
-    static bool s_espTreasure = false;
-    static bool s_espAllItems = false;
-    static bool s_espBoss = false;
-    static bool s_espBossLine = false;
-    static bool s_espBossHP = false;
-
     void Initialize() {
         ImGuiStyle& style = ImGui::GetStyle();
         style.WindowRounding = 8.0f;
         style.FrameRounding = 5.0f;
         style.GrabRounding = 5.0f;
         style.ItemSpacing = ImVec2(8, 6);
-        style.FramePadding = ImVec2(8, 4);
+        style.FramePadding = ImVec2(8, 5);
         style.WindowPadding = ImVec2(10, 10);
 
         ImVec4* colors = style.Colors;
@@ -72,24 +63,40 @@ namespace Menu {
     void ToggleOpen() { s_isOpen = !s_isOpen; }
 
     // --------------------------------------------------------------------------
-    // TAB 0: CÂU CÁ & BỌ
+    // TAB 1: MAIN (HỆ THỐNG & BẢO QUẢN)
     // --------------------------------------------------------------------------
-    static void RenderTabFishingInsects() {
-        auto& fcfg = FishingFeatures::GetConfig();
+    static void RenderTabMain() {
         auto& mcfg = MainFeatures::GetConfig();
-        auto& icfg = InsectFeatures::GetConfig();
+        auto mstatus = MainFeatures::GetStatus();
 
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "TIỆN ÍCH CHUNG CÂU & BỌ");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "CHỨC NĂNG HỆ THỐNG & TỰ ĐỘNG");
         ImGui::Separator();
-        ImGui::Checkbox("Auto Bảo Quản", &mcfg.autoPreserveFish);
+
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Tự Động Bảo Quản (Auto Keep Fish):");
+        ImGui::Checkbox("Bật Auto Bảo Quản", &mcfg.autoPreserveFish);
         ImGui::SliderFloat("Delay Bảo Quản (s)", &mcfg.autoPreserveDelay, 0.1f, 1.0f, "%.2f s");
-        ImGui::Checkbox("Tự Động Đóng Hộp Quà", &mcfg.autoCloseGift);
-        ImGui::Checkbox("Tự Động Đóng Hộp Thẻ", &mcfg.autoCloseCardBox);
+        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã bảo quản: %u con", mstatus.preservedFishCount);
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "CÂU CÁ (FISHING)");
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Tự Động Đóng Giao Diện:");
+        ImGui::Checkbox("Tự Động Đóng Hộp Quà", &mcfg.autoCloseGift);
+        ImGui::Checkbox("Tự Động Đóng Hộp Thẻ", &mcfg.autoCloseCardBox);
+        ImGui::SliderFloat("Delay Đóng Giao Diện (s)", &mcfg.autoCloseDelay, 0.1f, 1.0f, "%.2f s");
+        ImGui::Checkbox("Auto Sửa Công Cụ (Cần / Vợt / Cuốc)", &mcfg.autoRepairTool);
+    }
+
+    // --------------------------------------------------------------------------
+    // TAB 2: CÂU CÁ (FISHING - TÍCH HỢP BÓNG THƯỜNG & KHỔNG LỒ)
+    // --------------------------------------------------------------------------
+    static void RenderTabFishing() {
+        auto& fcfg = FishingFeatures::GetConfig();
+        auto& icfg = InsectFeatures::GetConfig();
+
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "CÂU CÁ & BẮT BỌ");
         ImGui::Separator();
-        ImGui::Checkbox("Auto Câu Cá", &fcfg.autoFishingEnabled);
+
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Auto Câu Cá:");
+        ImGui::Checkbox("Bật Auto Câu Cá", &fcfg.autoFishingEnabled);
         if (fcfg.autoFishingEnabled) {
             ImGui::Checkbox("Tự Động Quăng Cần", &fcfg.autoCastRod);
             ImGui::SliderFloat("Delay Quăng Lại (s)", &fcfg.castDelay, 0.5f, 3.0f, "%.2f s");
@@ -100,8 +107,7 @@ namespace Menu {
         }
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "LỌC BÓNG CÁ");
-        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Lọc Bóng Cá:");
         ImGui::Checkbox("Lọc Bóng 1", &fcfg.filterShadow[1]); ImGui::SameLine();
         ImGui::Checkbox("Lọc Bóng 2", &fcfg.filterShadow[2]); ImGui::SameLine();
         ImGui::Checkbox("Lọc Bóng 3", &fcfg.filterShadow[3]);
@@ -111,8 +117,7 @@ namespace Menu {
         ImGui::Checkbox("Lọc Bóng 7", &fcfg.filterShadow[7]);
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "BẮT BỌ & CÔN TRÙNG (INSECTS)");
-        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[3] Bắt Bọ & Côn Trùng:");
         ImGui::Checkbox("Tự Bắt Bọ", &icfg.autoCatchInsect);
         ImGui::Checkbox("Gom Côn Trùng", &icfg.gatherInsects);
         ImGui::Checkbox("Đóng Băng Côn Trùng", &icfg.freezeInsects);
@@ -120,146 +125,135 @@ namespace Menu {
     }
 
     // --------------------------------------------------------------------------
-    // TAB 1: KHAI KHOÁNG
+    // TAB 3: KHAI KHOÁNG & NÔNG TRẠI
     // --------------------------------------------------------------------------
     static void RenderTabMiningFarm() {
         auto& mcfg = MiningFeatures::GetConfig();
         auto& fcfg = FarmFeatures::GetConfig();
 
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ĐẬP ĐÁ & KHAI KHOÁNG");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "KHAI KHOÁNG, KHAI QUẬT & NÔNG TRẠI");
         ImGui::Separator();
-        ImGui::Checkbox("Auto Đập Đá", &mcfg.autoMineRocks);
-        ImGui::Checkbox("Auto Đổi Map Đập Đá", &mcfg.autoChangeMapMine);
-        ImGui::Checkbox("Auto Nhặt Vật Phẩm", &mcfg.autoPickupItems);
+
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Đập Đá & Khai Khoáng:");
+        ImGui::Checkbox("Auto Đập Đá", &mcfg.autoMine);
+        ImGui::Checkbox("Auto Đổi Map Đập Đá", &mcfg.autoChangeMap);
+        ImGui::SliderFloat("Delay Đổi Map Đá (s)", &mcfg.changeMapDelay, 1.0f, 10.0f, "%.1f s");
+        ImGui::Checkbox("Auto Nhặt Vật Phẩm", &mcfg.autoCollectItems);
+        ImGui::Checkbox("Tele Tất Cả Đá", &mcfg.teleAllStones);
+        ImGui::Checkbox("Tele Đá Nhỏ", &mcfg.teleSmallStones); ImGui::SameLine();
+        ImGui::Checkbox("Tele Đá Vừa", &mcfg.teleMediumStones); ImGui::SameLine();
+        ImGui::Checkbox("Tele Đá To", &mcfg.teleLargeStones);
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "CỔ VẬT / KHAI QUẬT (EXCAVATION)");
-        ImGui::Separator();
-        ImGui::Checkbox("Auto Khai Quật (Đào Từ Xa)", &mcfg.autoExcavate);
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Khai Quật:");
+        ImGui::Checkbox("Auto Khai Quật", &mcfg.autoExcavate);
+        ImGui::Checkbox("Auto Mua Dụng Cụ Đào", &mcfg.autoBuyShovel);
         ImGui::SliderFloat("Delay Đào (s)", &mcfg.excavateDelay, 0.1f, 1.0f, "%.2f s");
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "NÔNG TRẠI (FARM)");
-        ImGui::Separator();
-        ImGui::Checkbox("Tự Động Mua Hạt Giống", &fcfg.autoBuySeeds);
-        ImGui::Checkbox("Tự Động Mua Công Cụ", &fcfg.autoBuyTools);
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[3] Nông Trại:");
+        ImGui::Checkbox("Chặn Loading Nông Trại", &fcfg.blockFarmLoading);
         ImGui::Checkbox("Tự Động Thu & Bán", &fcfg.autoHarvest);
         ImGui::Checkbox("Giữ Biến Thể", &fcfg.keepVariants);
     }
 
     // --------------------------------------------------------------------------
-    // TAB 2: SỰ KIỆN & BOSS
+    // TAB 4: SỰ KIỆN & BOSS
     // --------------------------------------------------------------------------
     static void RenderTabBossCombat() {
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "BOSS RỒNG & CHIẾN ĐẤU (COMBAT VIP)");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "SỰ KIỆN & BOSS RỒNG");
         ImGui::Separator();
+
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Boss Rồng & Chiến Đấu:");
         ImGui::Checkbox("Tự Động Tấn Công Boss Rồng", &s_bossAttack);
-        ImGui::Checkbox("Tự Động Bắn Quái & Khóa Mục Tiêu", &s_autoAim);
-        ImGui::Checkbox("Bắn Liên Thanh Siêu Tốc (Rapid Fire)", &s_rapidFire);
         ImGui::Checkbox("Không Giật Súng (No Recoil)", &s_noRecoil);
+        ImGui::SliderFloat("Khoảng Cách Trên Đầu Boss (m)", &s_bossDistance, 5.0f, 30.0f, "%.1f m");
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "SỰ KIỆN MINIGAME & THẢ XU");
-        ImGui::Separator();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Sự Kiện Minigame:");
         ImGui::Checkbox("Sự Kiện Thả Xu Plinko", &s_plinko);
-        ImGui::Checkbox("Luôn Luôn Trúng Ô To Nhất", &s_plinkoAlwaysMax);
     }
 
     // --------------------------------------------------------------------------
-    // TAB 3: MINIGAME
+    // TAB 5: MINIGAME & DI CHUYỂN
     // --------------------------------------------------------------------------
     static void RenderTabMinigame() {
         auto& pcfg = PlayerFeatures::GetConfig();
 
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "PLAYER MODIFIERS (DI CHUYỂN)");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "MINIGAME & DI CHUYỂN NHÂN VẬT");
         ImGui::Separator();
-        ImGui::Checkbox("Chạy Nhanh (SpeedHack)", &pcfg.speedHack);
-        if (pcfg.speedHack) {
-            ImGui::SliderFloat("Tốc Độ Chạy", &pcfg.speedMultiplier, 1.0f, 10.0f, "%.1fx");
-        }
+
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Minigame Party & Về Đích:");
+        ImGui::Checkbox("Auto Về Đích", &pcfg.autoGoal);
+        ImGui::Checkbox("Auto Đập Búa", &s_autoHammer);
+        ImGui::Checkbox("Cầu Kính An Toàn", &s_glassBridge);
+
+        ImGui::Spacing();
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Di Chuyển Nhân Vật:");
+        ImGui::SliderFloat("Tốc Độ Chạy", &pcfg.speedMultiplier, 1.0f, 10.0f, "%.1fx");
         ImGui::Checkbox("Nhảy Cao", &pcfg.highJump);
         ImGui::Checkbox("Đi Trên Không", &pcfg.walkOnAir);
         ImGui::Checkbox("NoClip (Xuyên Vật Thể)", &pcfg.noClip);
-
-        ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "MINIGAME & THÁP");
-        ImGui::Separator();
-        ImGui::Checkbox("Auto Về Đích Tất Cả Map", &pcfg.autoMinigameGoal);
-        ImGui::Checkbox("Tự Dò Cầu Kính", &s_glassBridge);
-        ImGui::Checkbox("Tự Dò Ván Gỗ", &s_woodBridge);
-        ImGui::Checkbox("Auto School", &pcfg.autoSchool);
-        ImGui::Checkbox("Auto Đập Búa", &s_autoHammer);
     }
 
     // --------------------------------------------------------------------------
-    // TAB 4: HIỂN THỊ ESP
+    // TAB 6: HIỂN THỊ ESP
     // --------------------------------------------------------------------------
     static void RenderTabESP() {
-        auto& espCfg = ESPFeatures::GetConfig();
+        auto& ecfg = ESPFeatures::GetConfig();
 
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP SỰ KIỆN BOSS RỒNG & QUÁI");
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "HỆ THỐNG HIỂN THỊ ESP");
         ImGui::Separator();
-        ImGui::Checkbox("Bật Tổng ESP Boss / Quái", &espCfg.espBossMonster);
-        ImGui::Checkbox("Line Chỉ Đường Boss / Quái", &espCfg.espBossLine);
-        ImGui::Checkbox("Vòng Tròn Chân Raycast / Box", &espCfg.espBossBox);
-        ImGui::Checkbox("Tên Quái & Thanh Máu (HP Bar)", &espCfg.espBossHP);
-        ImGui::Checkbox("ESP Boss Rồng Đặc Biệt", &espCfg.espSpecialDragon);
 
-        ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP THU THẬP & THẾ GIỚI");
-        ImGui::Separator();
-        ImGui::Checkbox("ESP Vùng Câu Cá", &espCfg.espFishingZone);
-        ImGui::Checkbox("Hiện Nút Tele Vùng Câu", &espCfg.showTeleFishingZone);
-        ImGui::Checkbox("ESP Đá", &espCfg.espRocks);
-        ImGui::Checkbox("ESP Côn Trùng", &espCfg.espInsects);
-        ImGui::Checkbox("ESP Khai Quật", &espCfg.espExcavation);
-        ImGui::Checkbox("ESP Kho Báu", &espCfg.espTreasure);
-        ImGui::Checkbox("ESP Tất Cả Vật Phẩm", &espCfg.espAllItems);
-        ImGui::Checkbox("Hiện Nút Tele Tất Cả Vật Phẩm", &espCfg.showTeleAllItems);
-        ImGui::Checkbox("ESP Vật Phẩm Sự Kiện", &espCfg.espEventItems);
-        ImGui::Checkbox("Hiện Nút Tele Sự Kiện", &espCfg.showTeleEventItems);
-        ImGui::Checkbox("ESP Nhiệm Vụ NPC", &espCfg.espNPCQuest);
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] ESP Sự Kiện Boss Rồng & Quái:");
+        ImGui::Checkbox("Bật Tổng ESP Boss / Quái", &ecfg.espMonster);
+        ImGui::Checkbox("Line Chỉ Đường", &ecfg.espMonsterLine);
+        ImGui::Checkbox("ESP Tên & Máu", &ecfg.espMonsterName);
+        ImGui::Checkbox("ESP Boss Rồng Đặc Biệt", &ecfg.espDragonBoss);
 
         ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "ESP MINIGAME & KHÁC");
-        ImGui::Separator();
-        ImGui::Checkbox("ESP Zombie Virus", &espCfg.espZombieVirus);
-        ImGui::Checkbox("Hiện Nút Tele Zombie Virus", &espCfg.showTeleZombieVirus);
-        ImGui::Checkbox("ESP Auto Move / Path", &espCfg.espAutoPath);
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] ESP Thu Thập & Thế Giới:");
+        ImGui::Checkbox("ESP Vùng Câu Cá", &ecfg.espFishingZones);
+        ImGui::Checkbox("ESP Đá", &ecfg.espRocks);
+        ImGui::Checkbox("ESP Côn Trùng", &ecfg.espInsects);
+        ImGui::Checkbox("ESP Khai Quật", &ecfg.espExcavation);
+        ImGui::Checkbox("ESP Kho Báu", &ecfg.espTreasure);
+        ImGui::Checkbox("ESP Tất Cả Vật Phẩm", &ecfg.espAllItems);
+        ImGui::Checkbox("ESP Zombie Virus", &ecfg.espZombie);
     }
 
     // --------------------------------------------------------------------------
-    // TAB 5: TIỆN ÍCH
+    // TAB 7: DỊCH CHUYỂN BẢN ĐỒ
     // --------------------------------------------------------------------------
-    static void RenderTabUtilities() {
-        auto& ucfg = UtilityFeatures::GetConfig();
-
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "BỎ QUA QUẢNG CÁO (SKIP ADS)");
-        ImGui::Separator();
-        ImGui::Checkbox("Skip Ads 0s (AppLovin SDK)", &ucfg.skipAds);
-        ImGui::Checkbox("Skip Ads Bằng Proxy Callback", &ucfg.skipAdsProxy);
-        ImGui::Checkbox("Chặn Kết Nối Quảng Cáo HTTP", &ucfg.blockHttpAds);
-
-        ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "TIỆN ÍCH HỆ THỐNG");
-        ImGui::Separator();
-        ImGui::Checkbox("Stream Mode (Ẩn Menu Khi Quay/Chụp)", &ucfg.streamMode);
-        ImGui::Checkbox("Nhân Vật Không Ngủ", &ucfg.noSleep);
-
-        ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "DỊCH CHUYỂN BẢN ĐỒ");
+    static void RenderTabMap() {
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "DỊCH CHUYỂN TỨC THỜI BẢN ĐỒ");
         ImGui::Separator();
 
         const auto& locations = MapFeatures::GetLocations();
         for (size_t i = 0; i < locations.size(); i++) {
             const auto& loc = locations[i];
-            if (ImGui::Button(loc.nameVi, ImVec2(180, 26))) {
+            if (ImGui::Button(loc.nameVi, ImVec2(180, 28))) {
                 MapFeatures::TeleportToLocation(loc);
             }
             if ((i % 2 == 0) && (i + 1 < locations.size())) {
                 ImGui::SameLine();
             }
         }
+    }
+
+    // --------------------------------------------------------------------------
+    // TAB 8: TIỆN ÍCH & DEBUG
+    // --------------------------------------------------------------------------
+    static void RenderTabDebug() {
+        auto& ucfg = UtilityFeatures::GetConfig();
+
+        ImGui::TextColored(ImVec4(0.26f, 0.70f, 0.98f, 1.0f), "TIỆN ÍCH HỆ THỐNG & DEBUG");
+        ImGui::Separator();
+
+        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[1] Tiện Ích:");
+        ImGui::Checkbox("Bỏ Qua Video Ads 0s (Skip Ads SDK)", &ucfg.skipAdsSDK);
+        ImGui::Checkbox("Giữ Sáng Màn Hình (No Sleep)", &ucfg.noSleep);
+        ImGui::Checkbox("Auto Spam Chat", &ucfg.autoSpamChat);
     }
 
     // --------------------------------------------------------------------------
@@ -270,14 +264,14 @@ namespace Menu {
         if (!s_isOpen) return;
 
         ImGui::SetNextWindowSize(ImVec2(620, 420), ImGuiCond_FirstUseEver);
-        if (!ImGui::Begin("CATE  /  PLAY TOGETHER###Play Together VNG", p_open ? p_open : &s_isOpen,
+        if (!ImGui::Begin("KHOA PLAYTOGETHER - IMGUI iOS [Non-Jailbreak]###Play Together VNG", p_open ? p_open : &s_isOpen,
                           ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize)) {
             ImGui::End();
             return;
         }
 
         // Left Navigation Bar (##category)
-        ImGui::BeginChild("##category", ImVec2(150, 0), true);
+        ImGui::BeginChild("##category", ImVec2(140, 0), true);
 
         auto RenderTabButton = [](const char* label, Tab tab) {
             bool selected = (s_currentTab == tab);
@@ -289,19 +283,21 @@ namespace Menu {
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.75f, 0.75f, 0.75f, 1.0f));
             }
 
-            if (ImGui::Button(label, ImVec2(-1, 38))) {
+            if (ImGui::Button(label, ImVec2(-1, 34))) {
                 s_currentTab = tab;
             }
 
             ImGui::PopStyleColor(2);
         };
 
-        RenderTabButton("CÂU CÁ & BỌ", Tab::FishingInsects);
-        RenderTabButton("KHAI KHOÁNG", Tab::MiningFarm);
-        RenderTabButton("SỰ KIỆN & BOSS", Tab::BossCombat);
-        RenderTabButton("MINIGAME", Tab::Minigame);
-        RenderTabButton("HIỂN THỊ ESP", Tab::ESP);
-        RenderTabButton("TIỆN ÍCH", Tab::Utilities);
+        RenderTabButton("Main", Tab::Main);
+        RenderTabButton("Câu Cá", Tab::Fishing);
+        RenderTabButton("Khai Khoáng", Tab::MiningFarm);
+        RenderTabButton("Sự Kiện & Boss", Tab::BossCombat);
+        RenderTabButton("Minigame", Tab::Minigame);
+        RenderTabButton("ESP", Tab::ESP);
+        RenderTabButton("Bản Đồ", Tab::Map);
+        RenderTabButton("Debug", Tab::Debug);
 
         ImGui::EndChild();
 
@@ -311,12 +307,14 @@ namespace Menu {
         ImGui::BeginChild("##MainContentPanel", ImVec2(0, 0), true);
 
         switch (s_currentTab) {
-            case Tab::FishingInsects: RenderTabFishingInsects(); break;
-            case Tab::MiningFarm:      RenderTabMiningFarm(); break;
-            case Tab::BossCombat:      RenderTabBossCombat(); break;
-            case Tab::Minigame:        RenderTabMinigame(); break;
-            case Tab::ESP:             RenderTabESP(); break;
-            case Tab::Utilities:       RenderTabUtilities(); break;
+            case Tab::Main:       RenderTabMain(); break;
+            case Tab::Fishing:    RenderTabFishing(); break;
+            case Tab::MiningFarm: RenderTabMiningFarm(); break;
+            case Tab::BossCombat: RenderTabBossCombat(); break;
+            case Tab::Minigame:   RenderTabMinigame(); break;
+            case Tab::ESP:        RenderTabESP(); break;
+            case Tab::Map:        RenderTabMap(); break;
+            case Tab::Debug:      RenderTabDebug(); break;
         }
 
         ImGui::EndChild();

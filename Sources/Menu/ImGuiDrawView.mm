@@ -263,7 +263,10 @@ static CGRect g_titleBarRect = CGRectMake(50, 40, 620, 45);
             if (g_menuOpen) {
                 Menu::Render(&g_menuOpen);
 
-                ImGuiWindow* window = ImGui::FindWindowByName("CATE  /  PLAY TOGETHER###Play Together VNG");
+                ImGuiWindow* window = ImGui::FindWindowByName("KHOA PLAYTOGETHER - IMGUI iOS [Non-Jailbreak]###Play Together VNG");
+                if (!window) {
+                    window = ImGui::FindWindowByName("Play Together VNG");
+                }
                 if (window) {
                     g_menuRect = CGRectMake(window->Pos.x, window->Pos.y, window->Size.x, window->Size.y);
                     g_titleBarRect = CGRectMake(window->Pos.x, window->Pos.y, window->Size.x, window->TitleBarHeight());

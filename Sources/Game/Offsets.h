@@ -15,7 +15,10 @@ namespace Offsets {
         // ActorDefaultControlPlayer
         constexpr uintptr_t OnLateUpdate          = 0x3762F64; // public override void OnLateUpdate()
         constexpr uintptr_t get_FishingState      = 0x372D15C; // public ActorDefaultControl.eFishingState get_FishingState()
+        constexpr uintptr_t get_HasFishingPole    = 0x372D208; // public bool get_HasFishingPole()
+        constexpr uintptr_t get_IsFishing         = 0x376AF00; // public override bool get_IsFishing()
         constexpr uintptr_t OnClickFishing        = 0x376B0E0; // public override void OnClickFishing()
+        constexpr uintptr_t FishingCancel         = 0x376AE98; // public void FishingCancel()
         constexpr uintptr_t StartFishing          = 0x376B824; // public bool StartFishing()
         constexpr uintptr_t UpdateFishingState    = 0x376C860; // public override bool UpdateFishingState(ActorDefaultControl.eFishingState fishingState)
         constexpr uintptr_t HitResult             = 0x3770764; // private void HitResult(FishingSystem.eHitState hitState)

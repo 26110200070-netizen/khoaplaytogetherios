@@ -226,23 +226,6 @@ namespace Menu {
         ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Balo hiện tại: %d con", istats.backpackCount);
     }
 
-        ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "Tự Động Đổi Map Khi Hết Bọ:");
-        ImGui::Checkbox("Bật Auto Đổi Map Bắt Bọ", &icfg.autoChangeMap);
-        ImGui::TextColored(ImVec4(0.75f, 0.75f, 0.75f, 1.0f), "Chọn các map xoay vòng:");
-        ImGui::Checkbox("Quảng Trường (Plaza)", &icfg.cycleMapPlaza); ImGui::SameLine();
-        ImGui::Checkbox("Khu Cắm Trại", &icfg.cycleMapCamping);
-        ImGui::Checkbox("Khu Nghỉ Dưỡng", &icfg.cycleMapResort); ImGui::SameLine();
-        ImGui::Checkbox("Downtown", &icfg.cycleMapDowntown);
-
-        ImGui::Spacing();
-        ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "Bảng Thông Tin:");
-        ImGui::Checkbox("Hiện Popup Thông Tin Trên Màn Hình", &icfg.showInfoPopup);
-        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Số bọ trong map: %u con", istats.insectsInMap);
-        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Đã bắt được: %u con", istats.insectsCaught);
-        ImGui::TextColored(ImVec4(0.20f, 0.90f, 0.30f, 1.0f), "Balo hiện tại: %d con", istats.backpackCount);
-    }
-
     // --------------------------------------------------------------------------
     // TAB 4: ĐẬP ĐÁ (MINING - TAB RIÊNG)
     // --------------------------------------------------------------------------

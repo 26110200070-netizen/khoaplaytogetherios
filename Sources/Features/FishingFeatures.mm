@@ -206,19 +206,41 @@ namespace FishingFeatures {
                     }
                 }
             }
-            // 2. Minigame cá khổng lồ: CHỈ GIẬT KHI CÁ CHOÁNG (StunBegin = 23, Stun = 24)!
-            // TUYỆT ĐỐI KHÔNG GIẬT khi cá đang quẫy kéo dây (Drag = 17, Fighting = 19) để tránh đứt dây!
-            else if (currentState == 23 || currentState == 24) {
+            // 2. Minigame kéo cá thường (Fighting = 6) & Minigame Cá Khổng Lồ (Bóng 6, 7: States 13..25)
+            // Chuẩn logic Cate: Tự động nhấp giật liên tục (Pumping & Reeling) để kéo cá vào bờ
+            else if (currentState == 6) {
                 g_status.isInMinigame = true;
-                if (now - s_lastActionTime >= 0.12) {
+                if (now - s_lastActionTime >= 0.15) {
                     s_lastActionTime = now;
                     if (p_OnClickFishing) {
                         p_OnClickFishing(player);
                     }
                 }
             }
-            else if (currentState >= 13 && currentState <= 22) {
-                // Cá đang giằng co / kéo dây: Giữ nguyên không giật cần
+            else if (currentState == 16 || currentState == 18 || currentState == 19 || 
+                     currentState == 22 || currentState == 23 || currentState == 24 || currentState == 25) {
+                g_status.isInMinigame = true;
+                // Nhấp giật theo nhịp chuẩn máy bay tự động kéo cá:
+                // Stun (23, 24): Tốc độ siêu nhanh 80ms. Pumpin/Fighting (16, 19, 22): Tốc độ 110ms.
+                double cadence = (currentState == 23 || currentState == 24) ? 0.08 : 0.11;
+                if (now - s_lastActionTime >= cadence) {
+                    s_lastActionTime = now;
+                    if (p_OnClickFishing) {
+                        p_OnClickFishing(player);
+                    }
+                }
+            }
+            else if (currentState == 17) {
+                // BigFish_Drag: Cá đang kéo căng dây cực mạnh, nhấp giữ nhịp chậm 220ms để không đứt dây
+                g_status.isInMinigame = true;
+                if (now - s_lastActionTime >= 0.22) {
+                    s_lastActionTime = now;
+                    if (p_OnClickFishing) {
+                        p_OnClickFishing(player);
+                    }
+                }
+            }
+            else if (currentState >= 13 && currentState <= 15) {
                 g_status.isInMinigame = true;
             }
             // 3. Bắt được cá thành công (State 7 hoặc 20)

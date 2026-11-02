@@ -151,7 +151,7 @@ namespace InsectFeatures {
                     void* control = *(void**)((uintptr_t)insectEntry + 0x20);
                     if (!control || (uintptr_t)control < 0x100000000ULL) continue;
 
-                    validInsects.push_back(control);
+                    validInsects.push_back(insectEntry);
                 }
             }
             g_stats.insectsInMap = (uint32_t)validInsects.size();
@@ -179,11 +179,14 @@ namespace InsectFeatures {
             }
 
             // 3. Logic Tự Động Bắt Bọ Chuẩn Cate:
-            // Tele tới bọ -> Đợi đúng 2s -> Vung vợt xuống là tự động dính -> Chuyển con tiếp theo
+            // Tele tới bọ -> Đợi 1.5s -> Vung vợt xuống là tự động dính -> Chuyển con tiếp theo
             switch (s_state) {
                 case CatchState::Idle:
                 case CatchState::TeleportToInsect: {
-                    s_currentTargetControl = validInsects[0];
+                    void* insectEntry = validInsects[0];
+                    uint32_t insectUID = *(uint32_t*)((uintptr_t)insectEntry + 0x1C);
+                    s_currentTargetControl = *(void**)((uintptr_t)insectEntry + 0x20);
+
                     if (s_currentTargetControl && p_Insect_get_DetectTargetPos) {
                         GameTypes::Vector3 ipos = p_Insect_get_DetectTargetPos(s_currentTargetControl);
                         if (fabsf(ipos.x) > 0.01f || fabsf(ipos.z) > 0.01f) {
@@ -201,11 +204,17 @@ namespace InsectFeatures {
                                 groundY = playerPos.y;
                             }
 
-                            // Teleport nhân vật đứng vững chắc trên mặt đất sát con bọ
+                            // Teleport nhân vật đứng vững chắc sát con bọ (cách 0.4m)
                             PlayerFeatures::Teleport(ipos.x + 0.35f, groundY + 0.05f, ipos.z + 0.35f);
 
-                            // Đồng bộ vị trí vung vợt trong InsectSystem tới thẳng con bọ
-                            *(GameTypes::Vector3*)((uintptr_t)insectSys + 0x9C) = ipos;
+                            // Đồng bộ _selectInsectUID & _swingPos trong InsectSystem
+                            *(uint32_t*)((uintptr_t)insectSys + 0x98) = insectUID; // _selectInsectUID
+                            *(GameTypes::Vector3*)((uintptr_t)insectSys + 0x9C) = ipos; // _swingPos
+
+                            // Đóng băng côn trùng nếu bật NoFear
+                            if (g_config.insectsNoFear) {
+                                *(int32_t*)((uintptr_t)s_currentTargetControl + 0x238) = 0; // _senseState = None
+                            }
 
                             // Nhấn giữ vợt chuẩn bị bắt
                             if (p_OnPressInsectNet) {
@@ -219,8 +228,8 @@ namespace InsectFeatures {
                 }
 
                 case CatchState::Waiting2Seconds: {
-                    // Đợi đúng 2 giây theo yêu cầu
-                    if (now - s_teleportTime >= 2.0) {
+                    // Đợi đúng 1.5s - 2.0s ổn định vị trí và vung vợt
+                    if (now - s_teleportTime >= 1.5) {
                         s_state = CatchState::SwingNet;
                     }
                     break;
@@ -231,15 +240,23 @@ namespace InsectFeatures {
                     if (p_OnPressInsectNet) {
                         p_OnPressInsectNet(player, false);
                     }
-                    g_stats.insectsCaught++;
-                    g_stats.backpackCount++;
                     s_actionTime = now;
                     s_state = CatchState::Cooldown;
                     break;
                 }
 
                 case CatchState::Cooldown: {
-                    // Nghỉ 0.5s sau khi vung vợt để game xử lý nhận bọ
+                    // Kiểm tra xác nhận kết quả thật từ server / InsectSystem
+                    void* reward = *(void**)((uintptr_t)insectSys + 0xE0); // _insectReward
+                    int32_t result = *(int32_t*)((uintptr_t)insectSys + 0xE8); // _catchResult
+                    if (reward != nullptr || result == 1) {
+                        g_stats.insectsCaught++;
+                        g_stats.backpackCount++;
+                        *(void**)((uintptr_t)insectSys + 0xE0) = nullptr;
+                        *(int32_t*)((uintptr_t)insectSys + 0xE8) = 0;
+                    }
+
+                    // Nghỉ 0.5s sau khi vung vợt để tiếp tục con tiếp theo
                     if (now - s_actionTime >= 0.5) {
                         s_state = CatchState::TeleportToInsect;
                     }

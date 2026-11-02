@@ -340,6 +340,7 @@ namespace Menu {
 
         ImGui::Spacing();
         ImGui::TextColored(ImVec4(0.95f, 0.80f, 0.20f, 1.0f), "[2] Tiện Ích:");
+        ImGui::Checkbox("Tự Động Nhận Thành Tích (Achievements)", &ucfg.autoClaimAchievements);
         ImGui::Checkbox("Bỏ Qua Video Ads 0s", &ucfg.skipAds);
         ImGui::Checkbox("Giữ Sáng Màn Hình (No Sleep)", &ucfg.noSleep);
     }

@@ -70,6 +70,12 @@ namespace ESPFeatures {
     typedef GameTypes::Vector3 (*Insect_get_DetectTargetPos_t)(void* control);
     static Insect_get_DetectTargetPos_t p_Insect_get_DetectTargetPos = nullptr;
 
+    typedef void* (*GetExcavationObjectManager_t)(void* this_ptr, int64_t objectUid);
+    static GetExcavationObjectManager_t p_GetExcavationObjectManager = nullptr;
+
+    typedef int64_t (*UpdateClosestExcavationObjectId_t)(void* this_ptr, GameTypes::Vector3 position, float detectRange);
+    static UpdateClosestExcavationObjectId_t p_UpdateClosestExcavationObjectId = nullptr;
+
     // Cache of discovered ESP targets
     static std::vector<ESPItem> s_cachedItems;
     static double s_lastScanTime = 0.0;
@@ -91,6 +97,9 @@ namespace ESPFeatures {
 
         p_MapObject_get_DetectTargetPos = (MapObject_get_DetectTargetPos_t)Memory::GetRealOffset(Offsets::Collect::MapObject_get_DetectTargetPos);
         p_Insect_get_DetectTargetPos = (Insect_get_DetectTargetPos_t)Memory::GetRealOffset(Offsets::Collect::Insect_get_DetectTargetPos);
+
+        p_GetExcavationObjectManager = (GetExcavationObjectManager_t)Memory::GetRealOffset(0x396DDF0);
+        p_UpdateClosestExcavationObjectId = (UpdateClosestExcavationObjectId_t)Memory::GetRealOffset(0x3970A50);
 
         LOG_INFO("ESPFeatures hooks and engine pointers resolved.");
     }
@@ -119,7 +128,7 @@ namespace ESPFeatures {
         }
 
         double now = CACurrentMediaTime();
-        if (now - s_lastScanTime < 0.016) return; // Refresh scan at ~60 FPS (zero latency)
+        if (now - s_lastScanTime < 0.016) return; // Refresh scan at ~60 FPS
         s_lastScanTime = now;
 
         @try {
@@ -132,8 +141,8 @@ namespace ESPFeatures {
             GameTypes::Vector3 myPos = PlayerFeatures::GetLocalPosition();
             std::vector<ESPItem> newItems;
 
-            // 1. Quét Quặng Đá, Boss, Quái Vật & Kho Báu từ CollectSystem
-            if ((g_config.espRocks || g_config.espBossMonster || g_config.espExcavation || g_config.espTreasure || g_config.espAllItems) && p_get_Collect) {
+            // 1. Quét Quặng Đá, Cổ Vật, Boss, Quái từ CollectSystem
+            if (p_get_Collect) {
                 void* collectSys = p_get_Collect();
                 if (collectSys && (uintptr_t)collectSys >= 0x100000000ULL) {
 
@@ -151,14 +160,28 @@ namespace ESPFeatures {
                                     int32_t state = *(int32_t*)((uintptr_t)rockObj + 0x18);
                                     if (state == 2) continue; // Broken
 
+                                    // Lấy thông tin loại đá từ NetworkMapObject (offset 0x10)
+                                    void* netObj = *(void**)((uintptr_t)rockObj + 0x10);
+                                    uint32_t resId = 0;
+                                    uint8_t step = 0;
+                                    if (netObj && (uintptr_t)netObj >= 0x100000000ULL) {
+                                        resId = *(uint32_t*)((uintptr_t)netObj + 0x18);
+                                        step = *(uint8_t*)((uintptr_t)netObj + 0x1C);
+                                    }
+
+                                    std::string rockName = "Quặng Đá";
+                                    if (resId == 1001 || resId == 1) rockName = "Đá Nhỏ";
+                                    else if (resId == 1002 || resId == 2) rockName = "Đá Vừa";
+                                    else if (resId >= 1003) rockName = "Đá Chubby";
+
                                     if (p_MapObject_get_DetectTargetPos) {
                                         GameTypes::Vector3 pos = p_MapObject_get_DetectTargetPos(rockObj);
                                         float dx = pos.x - myPos.x;
                                         float dy = pos.y - myPos.y;
                                         float dz = pos.z - myPos.z;
                                         float dist = sqrtf(dx*dx + dy*dy + dz*dz);
-                                        if (dist < 200.0f) {
-                                            newItems.push_back({ "Quặng Đá", pos.x, pos.y, pos.z, IM_COL32(255, 215, 0, 220), dist, 0, 0, 2 });
+                                        if (dist < 250.0f) {
+                                            newItems.push_back({ rockName, pos.x, pos.y, pos.z, IM_COL32(255, 215, 0, 220), dist, (uint32_t)step, 5, 2 });
                                         }
                                     }
                                 }
@@ -166,7 +189,41 @@ namespace ESPFeatures {
                         }
                     }
 
-                    // [B] Boss Rồng & Quái Vật (FieldMonsterInfoList at 0x80)
+                    // [B] Cổ Vật & Kho Báu (Excavation)
+                    if (g_config.espExcavation || g_config.espTreasure) {
+                        if (!p_UpdateClosestExcavationObjectId) p_UpdateClosestExcavationObjectId = (UpdateClosestExcavationObjectId_t)Memory::GetRealOffset(0x3970A50);
+                        if (!p_GetExcavationObjectManager) p_GetExcavationObjectManager = (GetExcavationObjectManager_t)Memory::GetRealOffset(0x396DDF0);
+                        if (!p_Component_get_transform) p_Component_get_transform = (Component_get_transform_t)Memory::GetRealOffset(Offsets::Engine::Component_get_transform);
+                        if (!p_Transform_get_position) p_Transform_get_position = (Transform_get_position_t)Memory::GetRealOffset(Offsets::Engine::Transform_get_position);
+
+                        int64_t closestUid = 0;
+                        if (p_UpdateClosestExcavationObjectId) {
+                            closestUid = p_UpdateClosestExcavationObjectId(collectSys, myPos, 9999.0f);
+                        } else {
+                            closestUid = *(int64_t*)((uintptr_t)collectSys + 0x120);
+                        }
+
+                        if (closestUid != 0 && p_GetExcavationObjectManager) {
+                            void* manager = p_GetExcavationObjectManager(collectSys, closestUid);
+                            if (manager && (uintptr_t)manager >= 0x100000000ULL) {
+                                int32_t curHp = *(int32_t*)((uintptr_t)manager + 0x30);
+                                int32_t maxHp = *(int32_t*)((uintptr_t)manager + 0x2C);
+                                void* trans = p_Component_get_transform ? p_Component_get_transform(manager) : nullptr;
+                                if (trans && p_Transform_get_position) {
+                                    GameTypes::Vector3 tpos = p_Transform_get_position(trans);
+                                    float dx = tpos.x - myPos.x;
+                                    float dy = tpos.y - myPos.y;
+                                    float dz = tpos.z - myPos.z;
+                                    float dist = sqrtf(dx*dx + dy*dy + dz*dz);
+                                    if (dist < 300.0f) {
+                                        newItems.push_back({ "Cổ Vật", tpos.x, tpos.y, tpos.z, IM_COL32(0, 255, 255, 240), dist, (uint32_t)curHp, (uint32_t)maxHp, 4 });
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // [C] Boss Rồng & Quái Vật (FieldMonsterInfoList at 0x80)
                     if (g_config.espBossMonster) {
                         void* monsterList = *(void**)((uintptr_t)collectSys + 0x80);
                         if (monsterList && (uintptr_t)monsterList >= 0x100000000ULL) {
@@ -221,7 +278,7 @@ namespace ESPFeatures {
                                     float dy = ipos.y - myPos.y;
                                     float dz = ipos.z - myPos.z;
                                     float dist = sqrtf(dx*dx + dy*dy + dz*dz);
-                                    if (dist < 150.0f) {
+                                    if (dist < 180.0f) {
                                         newItems.push_back({ "Côn Trùng", ipos.x, ipos.y, ipos.z, IM_COL32(144, 238, 144, 220), dist, 0, 0, 3 });
                                     }
                                 }
@@ -258,7 +315,7 @@ namespace ESPFeatures {
     }
 
     // --------------------------------------------------------------------------
-    // ESP Rendering on ImGui Background DrawList
+    // ESP Rendering on ImGui Background DrawList (Snaplines, Boxes, Text)
     // --------------------------------------------------------------------------
     void RenderESP() {
         if (!IsEnabled()) return;
@@ -301,20 +358,48 @@ namespace ESPFeatures {
                 }
             }
 
-            // 2. ESP Đá & Khoáng Sản (type == 2)
+            // 2. ESP Đá & Khoáng Sản (type == 2) -> Snapline + Box + Label
             else if (item.type == 2 && g_config.espRocks) {
-                drawList->AddCircle(scr, 14.0f, IM_COL32(255, 215, 0, 220), 16, 2.0f);
-                char label[64];
-                snprintf(label, sizeof(label), "%s [%.1fm]", item.name.c_str(), item.distance);
-                drawList->AddText(ImVec2(scr.x - 20, scr.y - 22), IM_COL32(255, 215, 0, 255), label);
+                // Line chỉ đường từ đáy màn hình tới quặng đá
+                drawList->AddLine(screenCenterBottom, scr, IM_COL32(255, 215, 0, 180), 1.2f);
+                // Box khoanh vùng quặng đá
+                drawList->AddRect(ImVec2(scr.x - 16, scr.y - 16), ImVec2(scr.x + 16, scr.y + 16), IM_COL32(255, 215, 0, 220), 2.0f);
+
+                char label[128];
+                if (item.hp > 0) {
+                    snprintf(label, sizeof(label), "%s (Hit %u) [%.1fm]", item.name.c_str(), item.hp, item.distance);
+                } else {
+                    snprintf(label, sizeof(label), "%s [%.1fm]", item.name.c_str(), item.distance);
+                }
+                drawList->AddText(ImVec2(scr.x - 30, scr.y - 32), IM_COL32(255, 235, 100, 255), label);
             }
 
-            // 3. ESP Côn Trùng & Bọ (type == 3)
+            // 3. ESP Côn Trùng & Bọ (type == 3) -> Snapline + Vòng tròn + Label
             else if (item.type == 3 && g_config.espInsects) {
-                drawList->AddCircle(scr, 12.0f, IM_COL32(144, 238, 144, 220), 16, 1.5f);
+                // Line chỉ đường từ đáy màn hình tới bọ
+                drawList->AddLine(screenCenterBottom, scr, IM_COL32(144, 238, 144, 180), 1.2f);
+                // Vòng tròn định vị bọ
+                drawList->AddCircle(scr, 14.0f, IM_COL32(144, 238, 144, 240), 16, 1.8f);
+
                 char label[64];
                 snprintf(label, sizeof(label), "%s [%.1fm]", item.name.c_str(), item.distance);
-                drawList->AddText(ImVec2(scr.x - 20, scr.y - 20), IM_COL32(144, 238, 144, 255), label);
+                drawList->AddText(ImVec2(scr.x - 25, scr.y - 28), IM_COL32(160, 255, 160, 255), label);
+            }
+
+            // 4. ESP Cổ Vật & Kho Báu (type == 4) -> Snapline + Box + Máu HP
+            else if (item.type == 4 && (g_config.espExcavation || g_config.espTreasure)) {
+                // Line chỉ đường từ đáy màn hình tới hòm cổ vật
+                drawList->AddLine(screenCenterBottom, scr, IM_COL32(0, 255, 255, 200), 1.5f);
+                // Khung hòm cổ vật
+                drawList->AddRect(ImVec2(scr.x - 18, scr.y - 18), ImVec2(scr.x + 18, scr.y + 18), IM_COL32(0, 255, 255, 255), 3.0f);
+
+                char label[128];
+                if (item.maxHp > 0) {
+                    snprintf(label, sizeof(label), "%s [HP %u/%u] [%.1fm]", item.name.c_str(), item.hp, item.maxHp, item.distance);
+                } else {
+                    snprintf(label, sizeof(label), "%s [%.1fm]", item.name.c_str(), item.distance);
+                }
+                drawList->AddText(ImVec2(scr.x - 35, scr.y - 34), IM_COL32(100, 255, 255, 255), label);
             }
         }
     }

@@ -262,13 +262,14 @@ static CGRect g_titleBarRect = CGRectMake(50, 40, 620, 45);
             ImGui_ImplMetal_NewFrame(renderPassDesc);
             ImGui::NewFrame();
 
-            // Run active automation loops (Auto Câu, Auto Bảo Quản, Đập Đá, Bắt Bọ, Player Mods, Nông Trại, ESP)
+            // Run active automation loops (Auto Câu, Auto Bảo Quản, Đập Đá, Bắt Bọ, Player Mods, Nông Trại, Utilities, ESP)
             MainFeatures::Update();
             FishingFeatures::Update();
             MiningFeatures::Update();
             InsectFeatures::Update();
             PlayerFeatures::Update();
             FarmFeatures::Update();
+            UtilityFeatures::Update();
             ESPFeatures::Update();
 
             // Render ESP overlays

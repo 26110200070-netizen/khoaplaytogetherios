@@ -21,6 +21,7 @@ namespace Offsets {
         constexpr uintptr_t get_Insect    = 0x34229D4; // public static InsectSystem get_Insect()
         constexpr uintptr_t get_Collect   = 0x3422AE8; // public static CollectSystem get_Collect()
         constexpr uintptr_t get_Chat      = 0x342235C; // public static ChatSystem get_Chat()
+        constexpr uintptr_t get_Mission   = 0x3421DF8; // public static MissionSystem get_Mission()
 
         // DialogSystem methods
         constexpr uintptr_t DialogSystem_FindTypeFirst = 0x2C72714; // public DialogUnit FindTypeFirst(eDialogType findtype)
@@ -92,6 +93,9 @@ namespace Offsets {
         // DialogMailBox (Tự động mở/nhận quà thư & đóng)
         constexpr uintptr_t DialogMailBox_OnClick_ReceiveAll           = 0x3EF95B0; // private void OnClick_ReceiveAll()
         constexpr uintptr_t DialogMailBox_OnClick_Close                = 0x3EF9104; // public void OnClick_Close()
+
+        // DialogAchievement (Nhận thành tích)
+        constexpr uintptr_t DialogAchievement_OnClickReward           = 0x3D5CAF0; // private void OnClickReward(uint achievementID)
     }
 
     // --------------------------------------------------------------------------
@@ -168,5 +172,20 @@ namespace Offsets {
         constexpr uintptr_t Insect_OnEscapeInsect         = 0x2DF5F08; // InsectController.OnEscapeInsect(Vector3)
         constexpr uintptr_t Insect_SenseCheck             = 0x2DF671C; // InsectController.SenseCheck()
         constexpr uintptr_t InsectSystem_get_CatchRad     = 0x2DFFC4C; // InsectSystem.get_CatchRad()
+
+        // Interaction actions
+        constexpr uintptr_t RequestToMapObjectAction      = 0x39739C4; // CollectSystem.RequestToMapObjectAction(uint)
+        constexpr uintptr_t RequestExcavationHit          = 0x396E800; // CollectSystem.RequestExcavationHit(bool, Vector3)
+        constexpr uintptr_t RequestExcvationReward        = 0x396ED50; // CollectSystem.RequestExcvationReward(long)
+        constexpr uintptr_t ExcavationObject_OnClickReward = 0x397A32C; // ExcavationObjectManager.OnClickReward()
+    }
+
+    // --------------------------------------------------------------------------
+    // 9. Mission & Achievements
+    // --------------------------------------------------------------------------
+    namespace Achievements {
+        constexpr uintptr_t MissionSystem_get_HasAchievementReward     = 0x2F4467C; // MissionSystem.get_HasAchievementReward()
+        constexpr uintptr_t MissionSystem_ShowAchievementRewardDialog = 0x2F45B18; // MissionSystem.ShowAchievementRewardDialog()
+        constexpr uintptr_t SendToAchievementReward                   = 0x35EE6E0; // NetNativeProtocol.SendToAchievementReward(uint, int)
     }
 }

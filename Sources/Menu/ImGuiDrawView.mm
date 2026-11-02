@@ -10,6 +10,7 @@
 #import "Features/InsectFeatures.h"
 #import "Features/PlayerFeatures.h"
 #import "Features/FarmFeatures.h"
+#import "Features/UtilityFeatures.h"
 #import "IMGUI/imgui.h"
 #import "IMGUI/imgui_internal.h"
 #import "IMGUI/imgui_impl_metal.h"
